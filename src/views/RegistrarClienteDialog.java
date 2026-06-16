@@ -2,14 +2,8 @@ package views;
 
 import java.awt.Frame;
 import java.awt.GridBagConstraints;
-import java.awt.GridBagLayout;
-import java.awt.Insets;
 
-import javax.swing.JButton;
 import javax.swing.JDialog;
-import javax.swing.JLabel;
-import javax.swing.JOptionPane;
-import javax.swing.JPanel;
 import javax.swing.JTextField;
 
 import controllers.ClienteController;
@@ -23,7 +17,7 @@ public class RegistrarClienteDialog extends JDialog {
     private JTextField txtEmail;
 
     public RegistrarClienteDialog(Frame parent) {
-        super(parent, "Registrar Cliente", true);
+        super(parent, Textos.Titulo.REGISTRAR_CLIENTE, true);
         setSize(380, 320);
         setLocationRelativeTo(parent);
         setResizable(false);
@@ -31,34 +25,25 @@ public class RegistrarClienteDialog extends JDialog {
     }
 
     private void initComponents() {
-        JPanel panel = new JPanel(new GridBagLayout());
-        GridBagConstraints gbc = new GridBagConstraints();
-        gbc.insets = new Insets(6, 10, 6, 10);
-        gbc.fill = GridBagConstraints.HORIZONTAL;
+        var panel = UI.formPanel();
+        GridBagConstraints gbc = UI.gbc(6);
 
-        txtDni      = new JTextField(15);
-        txtNombre   = new JTextField(15);
-        txtApellido = new JTextField(15);
-        txtTelefono = new JTextField(15);
-        txtEmail    = new JTextField(15);
+        txtDni      = UI.field(15);
+        txtNombre   = UI.field(15);
+        txtApellido = UI.field(15);
+        txtTelefono = UI.field(15);
+        txtEmail    = UI.field(15);
 
-        String[] labels = {"DNI:", "Nombre:", "Apellido:", "Teléfono:", "Email:"};
+        String[] labels = {Textos.Lbl.DNI, Textos.Lbl.NOMBRE, Textos.Lbl.APELLIDO,
+                           Textos.Lbl.TELEFONO, Textos.Lbl.EMAIL};
         JTextField[] fields = {txtDni, txtNombre, txtApellido, txtTelefono, txtEmail};
 
         for (int i = 0; i < labels.length; i++) {
-            gbc.gridx = 0; gbc.gridy = i; gbc.weightx = 0;
-            panel.add(new JLabel(labels[i]), gbc);
-            gbc.gridx = 1; gbc.weightx = 1;
-            panel.add(fields[i], gbc);
+            UI.addFila(panel, gbc, i, labels[i], fields[i]);
         }
 
-        JButton btnRegistrar = new JButton("Registrar");
-        gbc.gridx = 0; gbc.gridy = labels.length;
-        gbc.gridwidth = 2;
-        gbc.fill = GridBagConstraints.NONE;
-        gbc.anchor = GridBagConstraints.CENTER;
-        panel.add(btnRegistrar, gbc);
-
+        var btnRegistrar = UI.button(Textos.Btn.REGISTRAR);
+        UI.addButton(panel, gbc, labels.length, btnRegistrar);
         btnRegistrar.addActionListener(e -> onRegistrar());
         add(panel);
     }
@@ -72,8 +57,7 @@ public class RegistrarClienteDialog extends JDialog {
 
         if (dni.isEmpty() || nombre.isEmpty() || apellido.isEmpty()
                 || telefono.isEmpty() || email.isEmpty()) {
-            JOptionPane.showMessageDialog(this, "Todos los campos son obligatorios.",
-                    "Error de validación", JOptionPane.ERROR_MESSAGE);
+            UI.errorValidacion(this, Textos.Msg.CAMPOS_OBLIGATORIOS);
             return;
         }
 
@@ -84,21 +68,15 @@ public class RegistrarClienteDialog extends JDialog {
             Validador.telefono(telefono),
             Validador.email(email)
         );
-        if (error != null) {
-            JOptionPane.showMessageDialog(this, error, "Error de validación", JOptionPane.ERROR_MESSAGE);
-            return;
-        }
+        if (error != null) { UI.errorValidacion(this, error); return; }
 
         if (ClienteController.getInstance().buscarPorDni(dni) != null) {
-            JOptionPane.showMessageDialog(this, "Ya existe un cliente con ese DNI.",
-                    "Error", JOptionPane.ERROR_MESSAGE);
+            UI.error(this, Textos.Msg.DNI_DUPLICADO);
             return;
         }
 
         ClienteController.getInstance().registrarCliente(dni, nombre, apellido, telefono, email);
-        JOptionPane.showMessageDialog(this, "Cliente registrado correctamente.",
-                "Éxito", JOptionPane.INFORMATION_MESSAGE);
+        UI.info(this, "Cliente registrado correctamente.", Textos.Titulo.EXITO);
         dispose();
     }
-
 }

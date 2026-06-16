@@ -1,17 +1,9 @@
 package views;
 
-import java.awt.BorderLayout;
 import java.awt.Frame;
 import java.awt.GridBagConstraints;
-import java.awt.GridBagLayout;
-import java.awt.Insets;
 
-import javax.swing.BorderFactory;
-import javax.swing.JButton;
 import javax.swing.JDialog;
-import javax.swing.JLabel;
-import javax.swing.JOptionPane;
-import javax.swing.JPanel;
 import javax.swing.JTextField;
 
 import controllers.ComplejoDeportivoController;
@@ -25,7 +17,7 @@ public class RegistrarComplejoDialog extends JDialog {
     private JTextField txtEmail;
 
     public RegistrarComplejoDialog(Frame parent) {
-        super(parent, "Registrar Complejo Deportivo", true);
+        super(parent, Textos.Titulo.REGISTRAR_COMPLEJO, true);
         setSize(400, 320);
         setLocationRelativeTo(parent);
         setResizable(false);
@@ -33,37 +25,27 @@ public class RegistrarComplejoDialog extends JDialog {
     }
 
     private void initComponents() {
-        JPanel panel = new JPanel(new GridBagLayout());
-        panel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
-        GridBagConstraints gbc = new GridBagConstraints();
-        gbc.insets = new Insets(6, 8, 6, 8);
-        gbc.fill = GridBagConstraints.HORIZONTAL;
+        var panel = UI.formPanel();
+        GridBagConstraints gbc = UI.gbc(6);
 
-        txtCodigo    = new JTextField(15);
-        txtNombre    = new JTextField(15);
-        txtDireccion = new JTextField(15);
-        txtTelefono  = new JTextField(15);
-        txtEmail     = new JTextField(15);
+        txtCodigo    = UI.field(15);
+        txtNombre    = UI.field(15);
+        txtDireccion = UI.field(15);
+        txtTelefono  = UI.field(15);
+        txtEmail     = UI.field(15);
 
-        String[] labels = {"Código:", "Nombre:", "Dirección:", "Teléfono:", "Email:"};
+        String[] labels = {Textos.Lbl.CODIGO, Textos.Lbl.NOMBRE, "Dirección:",
+                           Textos.Lbl.TELEFONO, Textos.Lbl.EMAIL};
         JTextField[] fields = {txtCodigo, txtNombre, txtDireccion, txtTelefono, txtEmail};
 
         for (int i = 0; i < labels.length; i++) {
-            gbc.gridx = 0; gbc.gridy = i; gbc.weightx = 0;
-            panel.add(new JLabel(labels[i]), gbc);
-            gbc.gridx = 1; gbc.weightx = 1;
-            panel.add(fields[i], gbc);
+            UI.addFila(panel, gbc, i, labels[i], fields[i]);
         }
 
-        JButton btnRegistrar = new JButton("Registrar Complejo");
-        gbc.gridx = 0; gbc.gridy = labels.length;
-        gbc.gridwidth = 2;
-        gbc.fill = GridBagConstraints.NONE;
-        gbc.anchor = GridBagConstraints.CENTER;
-        panel.add(btnRegistrar, gbc);
-
+        var btnRegistrar = UI.button(Textos.Btn.REGISTRAR_COMPLEJO);
+        UI.addButton(panel, gbc, labels.length, btnRegistrar);
         btnRegistrar.addActionListener(e -> onRegistrar());
-        add(panel, BorderLayout.CENTER);
+        add(panel);
     }
 
     private void onRegistrar() {
@@ -75,8 +57,7 @@ public class RegistrarComplejoDialog extends JDialog {
 
         if (codigo.isEmpty() || nombre.isEmpty() || direccion.isEmpty()
                 || telefono.isEmpty() || email.isEmpty()) {
-            JOptionPane.showMessageDialog(this, "Todos los campos son obligatorios.",
-                    "Error de validación", JOptionPane.ERROR_MESSAGE);
+            UI.errorValidacion(this, Textos.Msg.CAMPOS_OBLIGATORIOS);
             return;
         }
 
@@ -86,20 +67,15 @@ public class RegistrarComplejoDialog extends JDialog {
             Validador.telefono(telefono),
             Validador.email(email)
         );
-        if (error != null) {
-            JOptionPane.showMessageDialog(this, error, "Error de validación", JOptionPane.ERROR_MESSAGE);
-            return;
-        }
+        if (error != null) { UI.errorValidacion(this, error); return; }
 
         if (ComplejoDeportivoController.getInstance().buscarPorCodigo(codigo) != null) {
-            JOptionPane.showMessageDialog(this, "Ya existe un complejo con ese código.",
-                    "Error", JOptionPane.ERROR_MESSAGE);
+            UI.error(this, Textos.Msg.CODIGO_DUPLICADO);
             return;
         }
 
         ComplejoDeportivoController.getInstance().registrarComplejo(codigo, nombre, direccion, telefono, email);
-        JOptionPane.showMessageDialog(this, "Complejo \"" + nombre + "\" registrado correctamente.",
-                "Éxito", JOptionPane.INFORMATION_MESSAGE);
+        UI.info(this, "Complejo \"" + nombre + "\" registrado correctamente.", Textos.Titulo.EXITO);
         dispose();
     }
 }

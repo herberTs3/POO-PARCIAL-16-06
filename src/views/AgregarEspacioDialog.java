@@ -2,18 +2,11 @@ package views;
 
 import java.awt.Frame;
 import java.awt.GridBagConstraints;
-import java.awt.GridBagLayout;
-import java.awt.Insets;
+import java.util.List;
 
-import javax.swing.JButton;
 import javax.swing.JComboBox;
 import javax.swing.JDialog;
-import javax.swing.JLabel;
-import javax.swing.JOptionPane;
-import javax.swing.JPanel;
 import javax.swing.JTextField;
-
-import java.util.List;
 
 import controllers.ComplejoDeportivoController;
 import models.ComplejoDeportivo;
@@ -25,15 +18,16 @@ public class AgregarEspacioDialog extends JDialog {
 
     private JComboBox<String> cmbComplejo;
     private JTextField txtCodigo;
-    private List<ComplejoDeportivo> complejos;
     private JTextField txtNombre;
     private JTextField txtCapacidad;
     private JTextField txtPrecioBaseHora;
     private JTextField txtSuperficie;
     private JComboBox<TipoEspacio> cmbTipo;
 
+    private List<ComplejoDeportivo> complejos;
+
     public AgregarEspacioDialog(Frame parent) {
-        super(parent, "Agregar Espacio Deportivo", true);
+        super(parent, Textos.Titulo.AGREGAR_ESPACIO, true);
         setSize(420, 380);
         setLocationRelativeTo(parent);
         setResizable(false);
@@ -43,23 +37,21 @@ public class AgregarEspacioDialog extends JDialog {
     private void initComponents() {
         complejos = ComplejoDeportivoController.getInstance().listarTodos();
 
-        JPanel panel = new JPanel(new GridBagLayout());
-        GridBagConstraints gbc = new GridBagConstraints();
-        gbc.insets = new Insets(6, 10, 6, 10);
-        gbc.fill = GridBagConstraints.HORIZONTAL;
+        var panel = UI.formPanel();
+        GridBagConstraints gbc = UI.gbc(6);
 
-        cmbComplejo       = new JComboBox<>();
+        cmbComplejo       = UI.combo();
         for (ComplejoDeportivo cp : complejos) cmbComplejo.addItem(cp.getCodigo() + " — " + cp.getNombre());
-        txtCodigo         = new JTextField(15);
-        txtNombre         = new JTextField(15);
-        txtCapacidad      = new JTextField(15);
-        txtPrecioBaseHora = new JTextField(15);
-        txtSuperficie     = new JTextField(15);
+        txtCodigo         = UI.field(15);
+        txtNombre         = UI.field(15);
+        txtCapacidad      = UI.field(15);
+        txtPrecioBaseHora = UI.field(15);
+        txtSuperficie     = UI.field(15);
         cmbTipo           = new JComboBox<>(TipoEspacio.values());
 
         String[] labels = {
-            "Complejo:", "Código espacio:", "Nombre:",
-            "Capacidad:", "Precio base/hora:", "Tipo:", "Superficie:"
+            Textos.Lbl.COMPLEJO, Textos.Lbl.CODIGO_ESPACIO, Textos.Lbl.NOMBRE,
+            Textos.Lbl.CAPACIDAD, Textos.Lbl.PRECIO_BASE, Textos.Lbl.TIPO, Textos.Lbl.SUPERFICIE
         };
         java.awt.Component[] fields = {
             cmbComplejo, txtCodigo, txtNombre,
@@ -67,29 +59,17 @@ public class AgregarEspacioDialog extends JDialog {
         };
 
         for (int i = 0; i < labels.length; i++) {
-            gbc.gridx = 0; gbc.gridy = i; gbc.weightx = 0;
-            panel.add(new JLabel(labels[i]), gbc);
-            gbc.gridx = 1; gbc.weightx = 1;
-            panel.add(fields[i], gbc);
+            UI.addFila(panel, gbc, i, labels[i], fields[i]);
         }
 
-        JButton btnAgregar = new JButton("Agregar Espacio");
-        gbc.gridx = 0; gbc.gridy = labels.length;
-        gbc.gridwidth = 2;
-        gbc.fill = GridBagConstraints.NONE;
-        gbc.anchor = GridBagConstraints.CENTER;
-        panel.add(btnAgregar, gbc);
-
+        var btnAgregar = UI.button(Textos.Btn.AGREGAR);
+        UI.addButton(panel, gbc, labels.length, btnAgregar);
         btnAgregar.addActionListener(e -> onAgregar());
         add(panel);
     }
 
     private void onAgregar() {
-        if (complejos.isEmpty()) {
-            JOptionPane.showMessageDialog(this, "No hay complejos registrados.",
-                    "Error", JOptionPane.ERROR_MESSAGE);
-            return;
-        }
+        if (complejos.isEmpty()) { UI.error(this, Textos.Msg.SIN_COMPLEJOS); return; }
 
         String codigo       = txtCodigo.getText().trim();
         String nombre       = txtNombre.getText().trim();
@@ -98,8 +78,7 @@ public class AgregarEspacioDialog extends JDialog {
         String superficie   = txtSuperficie.getText().trim();
 
         if (codigo.isEmpty() || nombre.isEmpty() || capacidadStr.isEmpty() || precioStr.isEmpty()) {
-            JOptionPane.showMessageDialog(this, "Todos los campos son obligatorios (superficie opcional).",
-                    "Error de validación", JOptionPane.ERROR_MESSAGE);
+            UI.errorValidacion(this, Textos.Msg.CAMPOS_OBLIGATORIOS_SUP);
             return;
         }
 
@@ -108,18 +87,15 @@ public class AgregarEspacioDialog extends JDialog {
             Validador.enteroPositivo("Capacidad", capacidadStr),
             Validador.decimalPositivo("Precio base/hora", precioStr)
         );
-        if (error != null) {
-            JOptionPane.showMessageDialog(this, error, "Error de validación", JOptionPane.ERROR_MESSAGE);
+        if (error != null) { UI.errorValidacion(this, error); return; }
+
+        int capacidad = Integer.parseInt(capacidadStr);
+        if (capacidad > 10000) {
+            UI.errorValidacion(this, Textos.Msg.CAPACIDAD_MAXIMA);
             return;
         }
 
         String codigoComplejo = complejos.get(cmbComplejo.getSelectedIndex()).getCodigo();
-        int capacidad         = Integer.parseInt(capacidadStr);
-        if (capacidad > 10000) {
-            JOptionPane.showMessageDialog(this, "La capacidad no puede superar las 10.000 personas.",
-                    "Error de validación", JOptionPane.ERROR_MESSAGE);
-            return;
-        }
         double precio         = Double.parseDouble(precioStr);
         TipoEspacio tipo      = (TipoEspacio) cmbTipo.getSelectedItem();
 
@@ -128,8 +104,9 @@ public class AgregarEspacioDialog extends JDialog {
         );
         ComplejoDeportivoController.getInstance().agregarEspacioAComplejo(codigoComplejo, espacio);
 
-        JOptionPane.showMessageDialog(this, "Espacio \"" + nombre + "\" agregado a " + complejos.get(cmbComplejo.getSelectedIndex()).getNombre() + ".",
-                "Éxito", JOptionPane.INFORMATION_MESSAGE);
+        UI.info(this, "Espacio \"" + nombre + "\" agregado a "
+                + complejos.get(cmbComplejo.getSelectedIndex()).getNombre() + ".",
+                Textos.Titulo.EXITO);
         dispose();
     }
 }

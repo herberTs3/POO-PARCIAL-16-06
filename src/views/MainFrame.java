@@ -3,15 +3,10 @@ package views;
 import java.awt.BorderLayout;
 import java.awt.Dimension;
 import java.awt.Font;
+import java.awt.event.ActionListener;
 
-import javax.swing.Box;
-import javax.swing.BoxLayout;
-import javax.swing.JButton;
 import javax.swing.JFrame;
-import javax.swing.JLabel;
 import javax.swing.JOptionPane;
-import javax.swing.JPanel;
-import javax.swing.JTextField;
 
 import controllers.ClienteController;
 import controllers.ComplejoDeportivoController;
@@ -21,7 +16,7 @@ public class MainFrame extends JFrame {
     private String usuarioSesion;
 
     public MainFrame() {
-        setTitle("Sistema de Reservas Deportivas");
+        setTitle(Textos.Titulo.MAIN);
         setSize(420, 600);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setResizable(false);
@@ -32,76 +27,74 @@ public class MainFrame extends JFrame {
     }
 
     private void pedirUsuarioSesion() {
-        JTextField txtUsuario = new JTextField("admin", 15);
-        Object[] msg = {new JLabel("Ingresá tu usuario para esta sesión:"), txtUsuario};
+        var txtUsuario = UI.field(15, "admin");
+        Object[] msg = {UI.label("Ingresá tu usuario para esta sesión:"), txtUsuario};
         while (true) {
-            int opt = JOptionPane.showConfirmDialog(null, msg, "Inicio de sesión",
-                    JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE);
+            int opt = UI.confirm(null, msg, Textos.Titulo.LOGIN);
             if (opt != JOptionPane.OK_OPTION) System.exit(0);
             String valor = txtUsuario.getText().trim();
             if (!valor.isEmpty()) { usuarioSesion = valor; return; }
-            JOptionPane.showMessageDialog(null, "El usuario no puede estar vacío.", "Error", JOptionPane.ERROR_MESSAGE);
+            UI.error(null, Textos.Msg.USUARIO_VACIO);
         }
     }
 
     private void initComponents() {
-        JPanel header = new JPanel();
-        JLabel lblUsuario = new JLabel("Usuario: " + usuarioSesion);
+        var header = new java.awt.Container();
+        var lblUsuario = UI.label("Usuario: " + usuarioSesion);
         lblUsuario.setFont(lblUsuario.getFont().deriveFont(Font.ITALIC, 11f));
         header.add(lblUsuario);
         add(header, BorderLayout.NORTH);
 
-        JPanel centerPanel = new JPanel();
-        centerPanel.setLayout(new BoxLayout(centerPanel, BoxLayout.Y_AXIS));
+        var centerPanel = UI.verticalBoxPanel();
         Dimension btnSize = new Dimension(240, 33);
 
-        centerPanel.add(Box.createVerticalGlue());
+        centerPanel.add(UI.verticalGlue());
 
-        centerPanel.add(seccion("ALTAS"));
-        centerPanel.add(Box.createVerticalStrut(4));
-        centerPanel.add(boton("Registrar Cliente",     btnSize, e -> new RegistrarClienteDialog(this).setVisible(true)));
-        centerPanel.add(Box.createVerticalStrut(4));
-        centerPanel.add(boton("Registrar Complejo",    btnSize, e -> new RegistrarComplejoDialog(this).setVisible(true)));
-        centerPanel.add(Box.createVerticalStrut(4));
-        centerPanel.add(boton("Agregar Espacio",       btnSize, e -> new AgregarEspacioDialog(this).setVisible(true)));
+        addSeccion(centerPanel, "ALTAS");
+        centerPanel.add(UI.verticalStrut(4));
+        addBoton(centerPanel, "Registrar Cliente",     btnSize, e -> new RegistrarClienteDialog(this).setVisible(true));
+        centerPanel.add(UI.verticalStrut(4));
+        addBoton(centerPanel, "Registrar Complejo",    btnSize, e -> new RegistrarComplejoDialog(this).setVisible(true));
+        centerPanel.add(UI.verticalStrut(4));
+        addBoton(centerPanel, "Agregar Espacio",       btnSize, e -> new AgregarEspacioDialog(this).setVisible(true));
 
-        centerPanel.add(Box.createVerticalStrut(10));
-        centerPanel.add(seccion("RESERVAS"));
-        centerPanel.add(Box.createVerticalStrut(4));
-        centerPanel.add(boton("Solicitar Reserva",     btnSize, e -> new SolicitarReservaDialog(this, usuarioSesion).setVisible(true)));
-        centerPanel.add(Box.createVerticalStrut(4));
-        centerPanel.add(boton("Confirmar con Seña",    btnSize, e -> new ConfirmarReservaDialog(this, usuarioSesion).setVisible(true)));
-        centerPanel.add(Box.createVerticalStrut(4));
-        centerPanel.add(boton("Cancelar Reserva",      btnSize, e -> new CancelarReservaDialog(this, usuarioSesion).setVisible(true)));
-        centerPanel.add(Box.createVerticalStrut(4));
-        centerPanel.add(boton("Iniciar / Finalizar",   btnSize, e -> new GestionarReservaDialog(this, usuarioSesion).setVisible(true)));
+        centerPanel.add(UI.verticalStrut(10));
+        addSeccion(centerPanel, "RESERVAS");
+        centerPanel.add(UI.verticalStrut(4));
+        addBoton(centerPanel, "Solicitar Reserva",     btnSize, e -> new SolicitarReservaDialog(this, usuarioSesion).setVisible(true));
+        centerPanel.add(UI.verticalStrut(4));
+        addBoton(centerPanel, "Confirmar con Seña",    btnSize, e -> new ConfirmarReservaDialog(this, usuarioSesion).setVisible(true));
+        centerPanel.add(UI.verticalStrut(4));
+        addBoton(centerPanel, Textos.Btn.CANCELAR,     btnSize, e -> new CancelarReservaDialog(this, usuarioSesion).setVisible(true));
+        centerPanel.add(UI.verticalStrut(4));
+        addBoton(centerPanel, "Iniciar / Finalizar",   btnSize, e -> new GestionarReservaDialog(this, usuarioSesion).setVisible(true));
 
-        centerPanel.add(Box.createVerticalStrut(10));
-        centerPanel.add(seccion("CONSULTAS"));
-        centerPanel.add(Box.createVerticalStrut(4));
-        centerPanel.add(boton("Consultar Espacios",    btnSize, e -> new ConsultarEspaciosFrame().setVisible(true)));
-        centerPanel.add(Box.createVerticalStrut(4));
-        centerPanel.add(boton("Consultas del Sistema", btnSize, e -> new ConsultasFrame().setVisible(true)));
+        centerPanel.add(UI.verticalStrut(10));
+        addSeccion(centerPanel, "CONSULTAS");
+        centerPanel.add(UI.verticalStrut(4));
+        addBoton(centerPanel, "Consultar Espacios",    btnSize, e -> new ConsultarEspaciosFrame().setVisible(true));
+        centerPanel.add(UI.verticalStrut(4));
+        addBoton(centerPanel, "Consultas del Sistema", btnSize, e -> new ConsultasFrame().setVisible(true));
 
-        centerPanel.add(Box.createVerticalStrut(14));
-        centerPanel.add(boton("Salir",                 btnSize, e -> System.exit(0)));
-        centerPanel.add(Box.createVerticalGlue());
+        centerPanel.add(UI.verticalStrut(14));
+        addBoton(centerPanel, "Salir",                 btnSize, e -> System.exit(0));
+        centerPanel.add(UI.verticalGlue());
 
         add(centerPanel, BorderLayout.CENTER);
     }
 
-    private JButton boton(String texto, Dimension size, java.awt.event.ActionListener action) {
-        JButton btn = new JButton(texto);
+    private void addBoton(java.awt.Container panel, String texto, Dimension size, ActionListener action) {
+        var btn = UI.button(texto);
         btn.setMaximumSize(size);
         btn.setAlignmentX(CENTER_ALIGNMENT);
         btn.addActionListener(action);
-        return btn;
+        panel.add(btn);
     }
 
-    private JLabel seccion(String texto) {
-        JLabel lbl = new JLabel(texto);
+    private void addSeccion(java.awt.Container panel, String texto) {
+        var lbl = UI.label(texto);
         lbl.setFont(lbl.getFont().deriveFont(Font.BOLD, 11f));
         lbl.setAlignmentX(CENTER_ALIGNMENT);
-        return lbl;
+        panel.add(lbl);
     }
 }
