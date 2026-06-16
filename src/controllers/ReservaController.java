@@ -169,6 +169,23 @@ public class ReservaController {
         return new ArrayList<>(reservas.values());
     }
 
+    public List<Reserva> listarPorEstado(EstadoReserva estado) {
+        List<Reserva> resultado = new ArrayList<>();
+        for (Reserva r : reservas.values()) {
+            if (r.getEstado() == estado) resultado.add(r);
+        }
+        return resultado;
+    }
+
+    public void iniciarUso(String codigoReserva, String usuario) {
+        Reserva reserva = buscarPorCodigo(codigoReserva);
+        if (reserva == null) throw new IllegalArgumentException("Reserva no encontrada: " + codigoReserva);
+        reserva.cambiarEstado(EstadoReserva.EN_CURSO, usuario);
+        HistorialController.getInstance().registrarCambio(
+            "CONFIRMADA", "EN_CURSO", "Reserva", codigoReserva, usuario
+        );
+    }
+
     private Reserva buscarPorCodigo(String codigo) {
         for (Reserva reserva : reservas.values()) {
             if (reserva.coincideCodigo(codigo)) return reserva;
