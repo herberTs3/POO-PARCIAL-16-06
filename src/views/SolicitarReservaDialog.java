@@ -143,7 +143,7 @@ public class SolicitarReservaDialog extends JDialog {
         }
 
         String error = Validador.primerError(
-            Validador.fecha(fechaStr),
+            Validador.fechaFutura(fechaStr),
             Validador.hora("Hora inicio", horaInicioStr),
             Validador.hora("Hora fin", horaFinStr),
             Validador.horasOrdenadas(horaInicioStr, horaFinStr)

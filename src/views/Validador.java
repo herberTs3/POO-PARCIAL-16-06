@@ -85,6 +85,26 @@ public class Validador {
         return null;
     }
 
+    public static String fechaFutura(String v) {
+        String formatError = fecha(v);
+        if (formatError != null) return formatError;
+        try {
+            SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
+            sdf.setLenient(false);
+            java.util.Date ingresada = sdf.parse(v);
+            java.util.Calendar hoy = java.util.Calendar.getInstance();
+            hoy.set(java.util.Calendar.HOUR_OF_DAY, 0);
+            hoy.set(java.util.Calendar.MINUTE, 0);
+            hoy.set(java.util.Calendar.SECOND, 0);
+            hoy.set(java.util.Calendar.MILLISECOND, 0);
+            if (ingresada.before(hoy.getTime()))
+                return "Fecha: no puede ser anterior a hoy.";
+        } catch (Exception e) {
+            return "Fecha: fecha inválida.";
+        }
+        return null;
+    }
+
     public static String primerError(String... errores) {
         for (String e : errores) {
             if (e != null) return e;
