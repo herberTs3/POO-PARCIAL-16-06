@@ -77,6 +77,18 @@ public class RegistrarClienteDialog extends JDialog {
             return;
         }
 
+        String error = Validador.primerError(
+            Validador.dni(dni),
+            Validador.soloLetras("Nombre", nombre),
+            Validador.soloLetras("Apellido", apellido),
+            Validador.telefono(telefono),
+            Validador.email(email)
+        );
+        if (error != null) {
+            JOptionPane.showMessageDialog(this, error, "Error de validación", JOptionPane.ERROR_MESSAGE);
+            return;
+        }
+
         if (ClienteController.getInstance().buscarPorDni(dni) != null) {
             JOptionPane.showMessageDialog(this, "Ya existe un cliente con ese DNI.",
                     "Error", JOptionPane.ERROR_MESSAGE);
@@ -88,4 +100,5 @@ public class RegistrarClienteDialog extends JDialog {
                 "Éxito", JOptionPane.INFORMATION_MESSAGE);
         dispose();
     }
+
 }

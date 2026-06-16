@@ -104,6 +104,20 @@ public class SolicitarReservaDialog extends JDialog {
             return;
         }
 
+        String error = Validador.primerError(
+            Validador.dni(dni),
+            Validador.codigo("Código complejo", codigoComplejo),
+            Validador.codigo("Código espacio", codigoEspacio),
+            Validador.fecha(fechaStr),
+            Validador.hora("Hora inicio", horaInicioStr),
+            Validador.hora("Hora fin", horaFinStr),
+            Validador.horasOrdenadas(horaInicioStr, horaFinStr)
+        );
+        if (error != null) {
+            JOptionPane.showMessageDialog(this, error, "Error de validación", JOptionPane.ERROR_MESSAGE);
+            return;
+        }
+
         try {
             Date fecha = new SimpleDateFormat("yyyy-MM-dd").parse(fechaStr);
             Time horaInicio = Time.valueOf(horaInicioStr + ":00");

@@ -80,6 +80,17 @@ public class RegistrarComplejoDialog extends JDialog {
             return;
         }
 
+        String error = Validador.primerError(
+            Validador.codigo("Código", codigo),
+            Validador.soloLetras("Nombre", nombre),
+            Validador.telefono(telefono),
+            Validador.email(email)
+        );
+        if (error != null) {
+            JOptionPane.showMessageDialog(this, error, "Error de validación", JOptionPane.ERROR_MESSAGE);
+            return;
+        }
+
         if (ComplejoDeportivoController.getInstance().buscarPorCodigo(codigo) != null) {
             JOptionPane.showMessageDialog(this, "Ya existe un complejo con ese código.",
                     "Error", JOptionPane.ERROR_MESSAGE);

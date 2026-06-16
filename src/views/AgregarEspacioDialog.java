@@ -92,28 +92,34 @@ public class AgregarEspacioDialog extends JDialog {
             return;
         }
 
+        String error = Validador.primerError(
+            Validador.codigo("Código complejo", codigoComplejo),
+            Validador.codigo("Código espacio", codigo),
+            Validador.enteroPositivo("Capacidad", capacidadStr),
+            Validador.decimalPositivo("Precio base/hora", precioStr)
+        );
+        if (error != null) {
+            JOptionPane.showMessageDialog(this, error, "Error de validación", JOptionPane.ERROR_MESSAGE);
+            return;
+        }
+
         if (ComplejoDeportivoController.getInstance().buscarPorCodigo(codigoComplejo) == null) {
             JOptionPane.showMessageDialog(this, "No existe un complejo con código: " + codigoComplejo,
                     "Error", JOptionPane.ERROR_MESSAGE);
             return;
         }
 
-        try {
-            int capacidad = Integer.parseInt(capacidadStr);
-            double precio = Double.parseDouble(precioStr);
-            TipoEspacio tipo = (TipoEspacio) cmbTipo.getSelectedItem();
+        int capacidad = Integer.parseInt(capacidadStr);
+        double precio = Double.parseDouble(precioStr);
+        TipoEspacio tipo = (TipoEspacio) cmbTipo.getSelectedItem();
 
-            EspacioDeportivo espacio = new EspacioDeportivo(
-                codigo, nombre, capacidad, precio, EstadoEspacio.DISPONIBLE, tipo, superficie
-            );
-            ComplejoDeportivoController.getInstance().agregarEspacioAComplejo(codigoComplejo, espacio);
+        EspacioDeportivo espacio = new EspacioDeportivo(
+            codigo, nombre, capacidad, precio, EstadoEspacio.DISPONIBLE, tipo, superficie
+        );
+        ComplejoDeportivoController.getInstance().agregarEspacioAComplejo(codigoComplejo, espacio);
 
-            JOptionPane.showMessageDialog(this, "Espacio \"" + nombre + "\" agregado al complejo " + codigoComplejo + ".",
-                    "Éxito", JOptionPane.INFORMATION_MESSAGE);
-            dispose();
-        } catch (NumberFormatException ex) {
-            JOptionPane.showMessageDialog(this, "Capacidad y precio deben ser numéricos.",
-                    "Error de formato", JOptionPane.ERROR_MESSAGE);
-        }
+        JOptionPane.showMessageDialog(this, "Espacio \"" + nombre + "\" agregado al complejo " + codigoComplejo + ".",
+                "Éxito", JOptionPane.INFORMATION_MESSAGE);
+        dispose();
     }
 }
