@@ -22,13 +22,14 @@ import controllers.ComplejoDeportivoController;
 import controllers.ReservaController;
 import models.Cliente;
 import models.ComplejoDeportivo;
+import models.EspacioDeportivo;
 import models.enums.TipoReserva;
 
 public class SolicitarReservaDialog extends JDialog {
 
     private JComboBox<String> cmbCliente;
     private JComboBox<String> cmbComplejo;
-    private JTextField txtCodigoEspacio;
+    private JComboBox<String> cmbEspacio;
     private JTextField txtFecha;
     private JTextField txtHoraInicio;
     private JTextField txtHoraFin;
@@ -40,7 +41,7 @@ public class SolicitarReservaDialog extends JDialog {
 
     public SolicitarReservaDialog(Frame parent) {
         super(parent, "Solicitar Reserva", true);
-        setSize(440, 420);
+        setSize(460, 400);
         setLocationRelativeTo(parent);
         setResizable(false);
         initComponents();
@@ -65,20 +66,23 @@ public class SolicitarReservaDialog extends JDialog {
             cmbComplejo.addItem(cp.getCodigo() + " — " + cp.getNombre());
         }
 
-        txtCodigoEspacio = new JTextField(15);
-        txtFecha         = new JTextField(15);
-        txtHoraInicio    = new JTextField(15);
-        txtHoraFin       = new JTextField(15);
-        cmbTipoReserva   = new JComboBox<>(TipoReserva.values());
-        txtUsuario       = new JTextField(15);
+        cmbEspacio = new JComboBox<>();
+        cargarEspacios();
+        cmbComplejo.addActionListener(e -> cargarEspacios());
+
+        txtFecha       = new JTextField(15);
+        txtHoraInicio  = new JTextField(15);
+        txtHoraFin     = new JTextField(15);
+        cmbTipoReserva = new JComboBox<>(TipoReserva.values());
+        txtUsuario     = new JTextField(15);
 
         String[] labels = {
-            "Cliente:", "Complejo:", "Código espacio:",
+            "Cliente:", "Complejo:", "Espacio:",
             "Fecha (yyyy-MM-dd):", "Hora inicio (HH:mm):", "Hora fin (HH:mm):",
             "Tipo reserva:", "Usuario:"
         };
         java.awt.Component[] fields = {
-            cmbCliente, cmbComplejo, txtCodigoEspacio,
+            cmbCliente, cmbComplejo, cmbEspacio,
             txtFecha, txtHoraInicio, txtHoraFin,
             cmbTipoReserva, txtUsuario
         };
@@ -101,6 +105,15 @@ public class SolicitarReservaDialog extends JDialog {
         add(panel);
     }
 
+    private void cargarEspacios() {
+        cmbEspacio.removeAllItems();
+        int idx = cmbComplejo.getSelectedIndex();
+        if (idx < 0 || idx >= complejos.size()) return;
+        for (EspacioDeportivo e : complejos.get(idx).obtenerEspacios()) {
+            cmbEspacio.addItem(e.getCodigo() + " — " + e.getNombre() + " (" + e.getTipoEspacio() + ")");
+        }
+    }
+
     private void onConfirmar() {
         if (clientes.isEmpty()) {
             JOptionPane.showMessageDialog(this, "No hay clientes registrados.", "Error", JOptionPane.ERROR_MESSAGE);
@@ -110,22 +123,24 @@ public class SolicitarReservaDialog extends JDialog {
             JOptionPane.showMessageDialog(this, "No hay complejos registrados.", "Error", JOptionPane.ERROR_MESSAGE);
             return;
         }
+        if (cmbEspacio.getItemCount() == 0) {
+            JOptionPane.showMessageDialog(this, "El complejo seleccionado no tiene espacios registrados.",
+                    "Error", JOptionPane.ERROR_MESSAGE);
+            return;
+        }
 
-        String codigoEspacio = txtCodigoEspacio.getText().trim();
         String fechaStr      = txtFecha.getText().trim();
         String horaInicioStr = txtHoraInicio.getText().trim();
         String horaFinStr    = txtHoraFin.getText().trim();
         String usuario       = txtUsuario.getText().trim();
 
-        if (codigoEspacio.isEmpty() || fechaStr.isEmpty()
-                || horaInicioStr.isEmpty() || horaFinStr.isEmpty() || usuario.isEmpty()) {
+        if (fechaStr.isEmpty() || horaInicioStr.isEmpty() || horaFinStr.isEmpty() || usuario.isEmpty()) {
             JOptionPane.showMessageDialog(this, "Todos los campos son obligatorios.",
                     "Error de validación", JOptionPane.ERROR_MESSAGE);
             return;
         }
 
         String error = Validador.primerError(
-            Validador.codigo("Código espacio", codigoEspacio),
             Validador.fecha(fechaStr),
             Validador.hora("Hora inicio", horaInicioStr),
             Validador.hora("Hora fin", horaFinStr),
@@ -139,6 +154,7 @@ public class SolicitarReservaDialog extends JDialog {
         try {
             String dni            = clientes.get(cmbCliente.getSelectedIndex()).getDni();
             String codigoComplejo = complejos.get(cmbComplejo.getSelectedIndex()).getCodigo();
+            String codigoEspacio  = ((String) cmbEspacio.getSelectedItem()).split(" — ")[0];
             Date fecha            = new SimpleDateFormat("yyyy-MM-dd").parse(fechaStr);
             Time horaInicio       = Time.valueOf(horaInicioStr + ":00");
             Time horaFin          = Time.valueOf(horaFinStr + ":00");
