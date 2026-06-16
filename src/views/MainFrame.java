@@ -17,7 +17,7 @@ public class MainFrame extends JFrame {
 
     public MainFrame() {
         setTitle(Textos.Titulo.MAIN);
-        setSize(420, 600);
+        setSize(420, 660);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setResizable(false);
         setLocationRelativeTo(null);
@@ -75,6 +75,11 @@ public class MainFrame extends JFrame {
         addBoton(centerPanel, "Consultar Espacios",    btnSize, e -> new ConsultarEspaciosFrame().setVisible(true));
         centerPanel.add(UI.verticalStrut(4));
         addBoton(centerPanel, "Consultas del Sistema", btnSize, e -> new ConsultasFrame().setVisible(true));
+
+        centerPanel.add(UI.verticalStrut(10));
+        addSeccion(centerPanel, "PRUEBAS");
+        centerPanel.add(UI.verticalStrut(4));
+        addBoton(centerPanel, "Ejecutar Pruebas Unitarias", btnSize, e -> new PruebasDialog(this).setVisible(true));
 
         centerPanel.add(UI.verticalStrut(14));
         addBoton(centerPanel, "Salir",                 btnSize, e -> System.exit(0));
