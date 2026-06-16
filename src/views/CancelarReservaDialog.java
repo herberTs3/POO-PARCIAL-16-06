@@ -24,20 +24,23 @@ public class CancelarReservaDialog extends JDialog {
 
     private JComboBox<String> cmbReserva;
     private JTextField txtFechaCancelacion;
-    private JTextField txtUsuario;
 
     private List<Reserva> reservas;
+    private String usuario;
 
-    public CancelarReservaDialog(Frame parent) {
+    public CancelarReservaDialog(Frame parent, String usuario) {
         super(parent, "Cancelar Reserva", true);
-        setSize(460, 240);
+        this.usuario = usuario;
+        setSize(460, 200);
         setLocationRelativeTo(parent);
         setResizable(false);
         initComponents();
     }
 
     private void initComponents() {
-        reservas = ReservaController.getInstance().listarPorEstado(EstadoReserva.CONFIRMADA);
+        reservas = new java.util.ArrayList<>();
+        reservas.addAll(ReservaController.getInstance().listarPorEstado(EstadoReserva.INGRESADA));
+        reservas.addAll(ReservaController.getInstance().listarPorEstado(EstadoReserva.CONFIRMADA));
 
         JPanel panel = new JPanel(new GridBagLayout());
         GridBagConstraints gbc = new GridBagConstraints();
@@ -47,10 +50,9 @@ public class CancelarReservaDialog extends JDialog {
         cmbReserva          = new JComboBox<>();
         for (Reserva r : reservas) cmbReserva.addItem(labelReserva(r));
         txtFechaCancelacion = new JTextField(new SimpleDateFormat("yyyy-MM-dd").format(new Date()), 15);
-        txtUsuario          = new JTextField(15);
 
-        String[] labels = {"Reserva (CONFIRMADA):", "Fecha cancelación (yyyy-MM-dd):", "Usuario:"};
-        java.awt.Component[] fields = {cmbReserva, txtFechaCancelacion, txtUsuario};
+        String[] labels = {"Reserva:", "Fecha cancelación (yyyy-MM-dd):"};
+        java.awt.Component[] fields = {cmbReserva, txtFechaCancelacion};
 
         for (int i = 0; i < labels.length; i++) {
             gbc.gridx = 0; gbc.gridy = i; gbc.weightx = 0;
@@ -69,16 +71,15 @@ public class CancelarReservaDialog extends JDialog {
 
     private void onCancelar() {
         if (reservas.isEmpty()) {
-            JOptionPane.showMessageDialog(this, "No hay reservas en estado CONFIRMADA.",
+            JOptionPane.showMessageDialog(this, "No hay reservas activas para cancelar.",
                     "Sin reservas", JOptionPane.WARNING_MESSAGE);
             return;
         }
 
         String fechaStr = txtFechaCancelacion.getText().trim();
-        String usuario  = txtUsuario.getText().trim();
 
-        if (fechaStr.isEmpty() || usuario.isEmpty()) {
-            JOptionPane.showMessageDialog(this, "Todos los campos son obligatorios.",
+        if (fechaStr.isEmpty()) {
+            JOptionPane.showMessageDialog(this, "La fecha de cancelación es obligatoria.",
                     "Error de validación", JOptionPane.ERROR_MESSAGE);
             return;
         }
@@ -98,9 +99,13 @@ public class CancelarReservaDialog extends JDialog {
 
             long horas = reserva.calcularHorasAnticipacion(fechaCancel);
             String msg = "Reserva " + reserva.getCodigo() + " cancelada.\n";
-            msg += horas > 24
-                ? "Seña de $" + senaAntes + " reintegrada como crédito a favor."
-                : "Cancelación con menos de 24hs — seña no reintegrada.";
+            if (senaAntes <= 0) {
+                msg += "Sin seña registrada — no hay importe a reintegrar.";
+            } else if (horas > 24) {
+                msg += "Seña de $" + senaAntes + " reintegrada como crédito a favor.";
+            } else {
+                msg += "Cancelación con menos de 24hs — seña no reintegrada.";
+            }
 
             JOptionPane.showMessageDialog(this, msg, "Reserva cancelada", JOptionPane.INFORMATION_MESSAGE);
             dispose();
@@ -110,8 +115,9 @@ public class CancelarReservaDialog extends JDialog {
     }
 
     private String labelReserva(Reserva r) {
-        return r.getCodigo() + " — " + r.obtenerCliente().getNombre() + " "
-                + r.obtenerCliente().getApellido() + " — " + r.getEspacio().getNombre()
+        return r.getCodigo() + " [" + r.getEstado() + "] — "
+                + r.obtenerCliente().getNombre() + " " + r.obtenerCliente().getApellido()
+                + " — " + r.getEspacio().getNombre()
                 + " — " + new SimpleDateFormat("yyyy-MM-dd").format(r.getFecha());
     }
 }

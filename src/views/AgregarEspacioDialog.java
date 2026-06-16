@@ -13,15 +13,19 @@ import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JTextField;
 
+import java.util.List;
+
 import controllers.ComplejoDeportivoController;
+import models.ComplejoDeportivo;
 import models.EspacioDeportivo;
 import models.enums.EstadoEspacio;
 import models.enums.TipoEspacio;
 
 public class AgregarEspacioDialog extends JDialog {
 
-    private JTextField txtCodigoComplejo;
+    private JComboBox<String> cmbComplejo;
     private JTextField txtCodigo;
+    private List<ComplejoDeportivo> complejos;
     private JTextField txtNombre;
     private JTextField txtCapacidad;
     private JTextField txtPrecioBaseHora;
@@ -37,12 +41,15 @@ public class AgregarEspacioDialog extends JDialog {
     }
 
     private void initComponents() {
+        complejos = ComplejoDeportivoController.getInstance().listarTodos();
+
         JPanel panel = new JPanel(new GridBagLayout());
         GridBagConstraints gbc = new GridBagConstraints();
         gbc.insets = new Insets(6, 10, 6, 10);
         gbc.fill = GridBagConstraints.HORIZONTAL;
 
-        txtCodigoComplejo = new JTextField(15);
+        cmbComplejo       = new JComboBox<>();
+        for (ComplejoDeportivo cp : complejos) cmbComplejo.addItem(cp.getCodigo() + " — " + cp.getNombre());
         txtCodigo         = new JTextField(15);
         txtNombre         = new JTextField(15);
         txtCapacidad      = new JTextField(15);
@@ -51,11 +58,11 @@ public class AgregarEspacioDialog extends JDialog {
         cmbTipo           = new JComboBox<>(TipoEspacio.values());
 
         String[] labels = {
-            "Código complejo:", "Código espacio:", "Nombre:",
+            "Complejo:", "Código espacio:", "Nombre:",
             "Capacidad:", "Precio base/hora:", "Tipo:", "Superficie:"
         };
         java.awt.Component[] fields = {
-            txtCodigoComplejo, txtCodigo, txtNombre,
+            cmbComplejo, txtCodigo, txtNombre,
             txtCapacidad, txtPrecioBaseHora, cmbTipo, txtSuperficie
         };
 
@@ -78,22 +85,25 @@ public class AgregarEspacioDialog extends JDialog {
     }
 
     private void onAgregar() {
-        String codigoComplejo = txtCodigoComplejo.getText().trim();
-        String codigo         = txtCodigo.getText().trim();
-        String nombre         = txtNombre.getText().trim();
-        String capacidadStr   = txtCapacidad.getText().trim();
-        String precioStr      = txtPrecioBaseHora.getText().trim();
-        String superficie     = txtSuperficie.getText().trim();
+        if (complejos.isEmpty()) {
+            JOptionPane.showMessageDialog(this, "No hay complejos registrados.",
+                    "Error", JOptionPane.ERROR_MESSAGE);
+            return;
+        }
 
-        if (codigoComplejo.isEmpty() || codigo.isEmpty() || nombre.isEmpty()
-                || capacidadStr.isEmpty() || precioStr.isEmpty()) {
+        String codigo       = txtCodigo.getText().trim();
+        String nombre       = txtNombre.getText().trim();
+        String capacidadStr = txtCapacidad.getText().trim();
+        String precioStr    = txtPrecioBaseHora.getText().trim();
+        String superficie   = txtSuperficie.getText().trim();
+
+        if (codigo.isEmpty() || nombre.isEmpty() || capacidadStr.isEmpty() || precioStr.isEmpty()) {
             JOptionPane.showMessageDialog(this, "Todos los campos son obligatorios (superficie opcional).",
                     "Error de validación", JOptionPane.ERROR_MESSAGE);
             return;
         }
 
         String error = Validador.primerError(
-            Validador.codigo("Código complejo", codigoComplejo),
             Validador.codigo("Código espacio", codigo),
             Validador.enteroPositivo("Capacidad", capacidadStr),
             Validador.decimalPositivo("Precio base/hora", precioStr)
@@ -103,22 +113,17 @@ public class AgregarEspacioDialog extends JDialog {
             return;
         }
 
-        if (ComplejoDeportivoController.getInstance().buscarPorCodigo(codigoComplejo) == null) {
-            JOptionPane.showMessageDialog(this, "No existe un complejo con código: " + codigoComplejo,
-                    "Error", JOptionPane.ERROR_MESSAGE);
-            return;
-        }
-
-        int capacidad = Integer.parseInt(capacidadStr);
-        double precio = Double.parseDouble(precioStr);
-        TipoEspacio tipo = (TipoEspacio) cmbTipo.getSelectedItem();
+        String codigoComplejo = complejos.get(cmbComplejo.getSelectedIndex()).getCodigo();
+        int capacidad         = Integer.parseInt(capacidadStr);
+        double precio         = Double.parseDouble(precioStr);
+        TipoEspacio tipo      = (TipoEspacio) cmbTipo.getSelectedItem();
 
         EspacioDeportivo espacio = new EspacioDeportivo(
             codigo, nombre, capacidad, precio, EstadoEspacio.DISPONIBLE, tipo, superficie
         );
         ComplejoDeportivoController.getInstance().agregarEspacioAComplejo(codigoComplejo, espacio);
 
-        JOptionPane.showMessageDialog(this, "Espacio \"" + nombre + "\" agregado al complejo " + codigoComplejo + ".",
+        JOptionPane.showMessageDialog(this, "Espacio \"" + nombre + "\" agregado a " + complejos.get(cmbComplejo.getSelectedIndex()).getNombre() + ".",
                 "Éxito", JOptionPane.INFORMATION_MESSAGE);
         dispose();
     }

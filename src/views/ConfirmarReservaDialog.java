@@ -24,13 +24,14 @@ public class ConfirmarReservaDialog extends JDialog {
     private JComboBox<String> cmbReserva;
     private JTextField txtImporteSena;
     private JComboBox<MedioPago> cmbMedioPago;
-    private JTextField txtUsuario;
 
     private List<Reserva> reservas;
+    private String usuario;
 
-    public ConfirmarReservaDialog(Frame parent) {
+    public ConfirmarReservaDialog(Frame parent, String usuario) {
         super(parent, "Confirmar Reserva con Seña", true);
-        setSize(440, 280);
+        this.usuario = usuario;
+        setSize(440, 240);
         setLocationRelativeTo(parent);
         setResizable(false);
         initComponents();
@@ -50,10 +51,9 @@ public class ConfirmarReservaDialog extends JDialog {
         }
         txtImporteSena = new JTextField(15);
         cmbMedioPago   = new JComboBox<>(MedioPago.values());
-        txtUsuario     = new JTextField(15);
 
-        String[] labels = {"Reserva (INGRESADA):", "Importe seña ($):", "Medio de pago:", "Usuario:"};
-        java.awt.Component[] fields = {cmbReserva, txtImporteSena, cmbMedioPago, txtUsuario};
+        String[] labels = {"Reserva (INGRESADA):", "Importe seña ($):", "Medio de pago:"};
+        java.awt.Component[] fields = {cmbReserva, txtImporteSena, cmbMedioPago};
 
         for (int i = 0; i < labels.length; i++) {
             gbc.gridx = 0; gbc.gridy = i; gbc.weightx = 0;
@@ -78,10 +78,9 @@ public class ConfirmarReservaDialog extends JDialog {
         }
 
         String importeStr = txtImporteSena.getText().trim();
-        String usuario    = txtUsuario.getText().trim();
 
-        if (importeStr.isEmpty() || usuario.isEmpty()) {
-            JOptionPane.showMessageDialog(this, "Todos los campos son obligatorios.",
+        if (importeStr.isEmpty()) {
+            JOptionPane.showMessageDialog(this, "El importe de la seña es obligatorio.",
                     "Error de validación", JOptionPane.ERROR_MESSAGE);
             return;
         }
