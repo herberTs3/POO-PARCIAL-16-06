@@ -133,10 +133,9 @@ public class ReservaController {
 
         List<EspacioDeportivo> resultado = new ArrayList<>();
         for (EspacioDeportivo espacio : complejo.obtenerEspacios()) {
-            if (espacio.coincideTipoActividad(tipoActividad)) {
-                if (espacio.estaDisponible(fecha, horaInicio, horaFin)) {
-                    resultado.add(espacio);
-                }
+            boolean coincideTipo = tipoActividad == null || espacio.coincideTipoActividad(tipoActividad);
+            if (coincideTipo && espacio.estaDisponible(fecha, horaInicio, horaFin)) {
+                resultado.add(espacio);
             }
         }
         return resultado;
