@@ -28,7 +28,7 @@ public class ConsultarEspaciosFrame extends JFrame {
     private JTextField txtFecha;
     private JTextField txtHoraInicio;
     private JTextField txtHoraFin;
-    private JComboBox<String> cmbTipoEspacio;
+    private JComboBox<TipoEspacio> cmbTipoEspacio;
     private DefaultTableModel tableModel;
 
     public ConsultarEspaciosFrame() {
@@ -48,12 +48,7 @@ public class ConsultarEspaciosFrame extends JFrame {
         txtHoraInicio     = new JTextField(6);
         txtHoraFin        = new JTextField(6);
 
-        String[] opciones = new String[TipoEspacio.values().length + 1];
-        opciones[0] = "TODOS";
-        for (int i = 0; i < TipoEspacio.values().length; i++) {
-            opciones[i + 1] = TipoEspacio.values()[i].name();
-        }
-        cmbTipoEspacio = new JComboBox<>(opciones);
+        cmbTipoEspacio = new JComboBox<>(TipoEspacio.values());
 
         JButton btnBuscar = new JButton("Buscar");
 
@@ -113,8 +108,7 @@ public class ConsultarEspaciosFrame extends JFrame {
             Date fecha      = new SimpleDateFormat("yyyy-MM-dd").parse(fechaStr);
             Time horaInicio = Time.valueOf(horaInicioStr + ":00");
             Time horaFin    = Time.valueOf(horaFinStr + ":00");
-            String seleccion = (String) cmbTipoEspacio.getSelectedItem();
-            TipoEspacio tipo = "TODOS".equals(seleccion) ? null : TipoEspacio.valueOf(seleccion);
+            TipoEspacio tipo = (TipoEspacio) cmbTipoEspacio.getSelectedItem();
 
             List<EspacioDeportivo> espacios = ReservaController.getInstance()
                     .consultarEspaciosDisponibles(codigoComplejo, fecha, horaInicio, horaFin, tipo);
