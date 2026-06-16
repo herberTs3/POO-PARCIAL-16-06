@@ -1,4 +1,8 @@
 {
+  "attribution": {
+    "commit": "",
+    "pr": ""
+  },
   "permissions": {
     "allow": [
       "Bash(git status)",
@@ -6,6 +10,7 @@
       "Bash(git log:*)",
       "Bash(git add:*)",
       "Bash(git commit:*)",
+      "Bash(git push origin main)",
       "Bash(javac:*)",
       "Bash(java:*)",
       "Bash(mkdir:*)",
@@ -18,7 +23,6 @@
     ],
     "deny": [
       "Bash(rm -rf:*)",
-      "Bash(git push:*)",
       "Write(./.claude/**)"
     ]
   },
