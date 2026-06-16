@@ -12,7 +12,6 @@ import javax.swing.JDialog;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
-import javax.swing.JTextField;
 
 import controllers.ReservaController;
 import models.Reserva;
@@ -22,15 +21,15 @@ public class GestionarReservaDialog extends JDialog {
 
     private JComboBox<String> cmbReservaIniciar;
     private JComboBox<String> cmbReservaFinalizar;
-    private JTextField txtUsuarioIniciar;
-    private JTextField txtUsuarioFinalizar;
 
     private List<Reserva> confirmadas;
     private List<Reserva> enCurso;
+    private String usuario;
 
-    public GestionarReservaDialog(Frame parent) {
+    public GestionarReservaDialog(Frame parent, String usuario) {
         super(parent, "Gestionar Uso de Reserva", true);
-        setSize(480, 340);
+        this.usuario = usuario;
+        setSize(480, 260);
         setLocationRelativeTo(parent);
         setResizable(false);
         initComponents();
@@ -59,13 +58,6 @@ public class GestionarReservaDialog extends JDialog {
         panel.add(cmbReservaIniciar, gbc);
 
         row++;
-        txtUsuarioIniciar = new JTextField(15);
-        gbc.gridx = 0; gbc.gridy = row; gbc.weightx = 0;
-        panel.add(new JLabel("Usuario:"), gbc);
-        gbc.gridx = 1; gbc.weightx = 1;
-        panel.add(txtUsuarioIniciar, gbc);
-
-        row++;
         JButton btnIniciar = new JButton("Iniciar Uso");
         gbc.gridx = 0; gbc.gridy = row; gbc.gridwidth = 2;
         gbc.fill = GridBagConstraints.NONE; gbc.anchor = GridBagConstraints.CENTER;
@@ -86,13 +78,6 @@ public class GestionarReservaDialog extends JDialog {
         panel.add(cmbReservaFinalizar, gbc);
 
         row++;
-        txtUsuarioFinalizar = new JTextField(15);
-        gbc.gridx = 0; gbc.gridy = row; gbc.weightx = 0;
-        panel.add(new JLabel("Usuario:"), gbc);
-        gbc.gridx = 1; gbc.weightx = 1;
-        panel.add(txtUsuarioFinalizar, gbc);
-
-        row++;
         JButton btnFinalizar = new JButton("Finalizar y Calcular Saldo");
         gbc.gridx = 0; gbc.gridy = row; gbc.gridwidth = 2;
         gbc.fill = GridBagConstraints.NONE; gbc.anchor = GridBagConstraints.CENTER;
@@ -107,11 +92,6 @@ public class GestionarReservaDialog extends JDialog {
         if (confirmadas.isEmpty()) {
             JOptionPane.showMessageDialog(this, "No hay reservas en estado CONFIRMADA.",
                     "Sin reservas", JOptionPane.WARNING_MESSAGE);
-            return;
-        }
-        String usuario = txtUsuarioIniciar.getText().trim();
-        if (usuario.isEmpty()) {
-            JOptionPane.showMessageDialog(this, "Ingresá el usuario.", "Error de validación", JOptionPane.ERROR_MESSAGE);
             return;
         }
         try {
@@ -130,11 +110,6 @@ public class GestionarReservaDialog extends JDialog {
         if (enCurso.isEmpty()) {
             JOptionPane.showMessageDialog(this, "No hay reservas en estado EN CURSO.",
                     "Sin reservas", JOptionPane.WARNING_MESSAGE);
-            return;
-        }
-        String usuario = txtUsuarioFinalizar.getText().trim();
-        if (usuario.isEmpty()) {
-            JOptionPane.showMessageDialog(this, "Ingresá el usuario.", "Error de validación", JOptionPane.ERROR_MESSAGE);
             return;
         }
         try {

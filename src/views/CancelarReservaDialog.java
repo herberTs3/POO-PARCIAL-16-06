@@ -24,13 +24,14 @@ public class CancelarReservaDialog extends JDialog {
 
     private JComboBox<String> cmbReserva;
     private JTextField txtFechaCancelacion;
-    private JTextField txtUsuario;
 
     private List<Reserva> reservas;
+    private String usuario;
 
-    public CancelarReservaDialog(Frame parent) {
+    public CancelarReservaDialog(Frame parent, String usuario) {
         super(parent, "Cancelar Reserva", true);
-        setSize(460, 240);
+        this.usuario = usuario;
+        setSize(460, 200);
         setLocationRelativeTo(parent);
         setResizable(false);
         initComponents();
@@ -47,10 +48,9 @@ public class CancelarReservaDialog extends JDialog {
         cmbReserva          = new JComboBox<>();
         for (Reserva r : reservas) cmbReserva.addItem(labelReserva(r));
         txtFechaCancelacion = new JTextField(new SimpleDateFormat("yyyy-MM-dd").format(new Date()), 15);
-        txtUsuario          = new JTextField(15);
 
-        String[] labels = {"Reserva (CONFIRMADA):", "Fecha cancelación (yyyy-MM-dd):", "Usuario:"};
-        java.awt.Component[] fields = {cmbReserva, txtFechaCancelacion, txtUsuario};
+        String[] labels = {"Reserva (CONFIRMADA):", "Fecha cancelación (yyyy-MM-dd):"};
+        java.awt.Component[] fields = {cmbReserva, txtFechaCancelacion};
 
         for (int i = 0; i < labels.length; i++) {
             gbc.gridx = 0; gbc.gridy = i; gbc.weightx = 0;
@@ -75,10 +75,9 @@ public class CancelarReservaDialog extends JDialog {
         }
 
         String fechaStr = txtFechaCancelacion.getText().trim();
-        String usuario  = txtUsuario.getText().trim();
 
-        if (fechaStr.isEmpty() || usuario.isEmpty()) {
-            JOptionPane.showMessageDialog(this, "Todos los campos son obligatorios.",
+        if (fechaStr.isEmpty()) {
+            JOptionPane.showMessageDialog(this, "La fecha de cancelación es obligatoria.",
                     "Error de validación", JOptionPane.ERROR_MESSAGE);
             return;
         }

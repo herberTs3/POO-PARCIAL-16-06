@@ -34,14 +34,15 @@ public class SolicitarReservaDialog extends JDialog {
     private JTextField txtHoraInicio;
     private JTextField txtHoraFin;
     private JComboBox<TipoReserva> cmbTipoReserva;
-    private JTextField txtUsuario;
 
     private List<Cliente> clientes;
     private List<ComplejoDeportivo> complejos;
+    private String usuario;
 
-    public SolicitarReservaDialog(Frame parent) {
+    public SolicitarReservaDialog(Frame parent, String usuario) {
         super(parent, "Solicitar Reserva", true);
-        setSize(460, 400);
+        this.usuario = usuario;
+        setSize(460, 370);
         setLocationRelativeTo(parent);
         setResizable(false);
         initComponents();
@@ -74,17 +75,16 @@ public class SolicitarReservaDialog extends JDialog {
         txtHoraInicio  = new JTextField(15);
         txtHoraFin     = new JTextField(15);
         cmbTipoReserva = new JComboBox<>(TipoReserva.values());
-        txtUsuario     = new JTextField(15);
 
         String[] labels = {
             "Cliente:", "Complejo:", "Espacio:",
             "Fecha (yyyy-MM-dd):", "Hora inicio (HH:mm):", "Hora fin (HH:mm):",
-            "Tipo reserva:", "Usuario:"
+            "Tipo reserva:"
         };
         java.awt.Component[] fields = {
             cmbCliente, cmbComplejo, cmbEspacio,
             txtFecha, txtHoraInicio, txtHoraFin,
-            cmbTipoReserva, txtUsuario
+            cmbTipoReserva
         };
 
         for (int i = 0; i < labels.length; i++) {
@@ -135,7 +135,6 @@ public class SolicitarReservaDialog extends JDialog {
         String fechaStr      = txtFecha.getText().trim();
         String horaInicioStr = txtHoraInicio.getText().trim();
         String horaFinStr    = txtHoraFin.getText().trim();
-        String usuario       = txtUsuario.getText().trim();
 
         if (fechaStr.isEmpty() || horaInicioStr.isEmpty() || horaFinStr.isEmpty() || usuario.isEmpty()) {
             JOptionPane.showMessageDialog(this, "Todos los campos son obligatorios.",
