@@ -38,7 +38,9 @@ public class CancelarReservaDialog extends JDialog {
     }
 
     private void initComponents() {
-        reservas = ReservaController.getInstance().listarPorEstado(EstadoReserva.CONFIRMADA);
+        reservas = new java.util.ArrayList<>();
+        reservas.addAll(ReservaController.getInstance().listarPorEstado(EstadoReserva.INGRESADA));
+        reservas.addAll(ReservaController.getInstance().listarPorEstado(EstadoReserva.CONFIRMADA));
 
         JPanel panel = new JPanel(new GridBagLayout());
         GridBagConstraints gbc = new GridBagConstraints();
@@ -49,7 +51,7 @@ public class CancelarReservaDialog extends JDialog {
         for (Reserva r : reservas) cmbReserva.addItem(labelReserva(r));
         txtFechaCancelacion = new JTextField(new SimpleDateFormat("yyyy-MM-dd").format(new Date()), 15);
 
-        String[] labels = {"Reserva (CONFIRMADA):", "Fecha cancelación (yyyy-MM-dd):"};
+        String[] labels = {"Reserva:", "Fecha cancelación (yyyy-MM-dd):"};
         java.awt.Component[] fields = {cmbReserva, txtFechaCancelacion};
 
         for (int i = 0; i < labels.length; i++) {
@@ -69,7 +71,7 @@ public class CancelarReservaDialog extends JDialog {
 
     private void onCancelar() {
         if (reservas.isEmpty()) {
-            JOptionPane.showMessageDialog(this, "No hay reservas en estado CONFIRMADA.",
+            JOptionPane.showMessageDialog(this, "No hay reservas activas para cancelar.",
                     "Sin reservas", JOptionPane.WARNING_MESSAGE);
             return;
         }
@@ -97,9 +99,13 @@ public class CancelarReservaDialog extends JDialog {
 
             long horas = reserva.calcularHorasAnticipacion(fechaCancel);
             String msg = "Reserva " + reserva.getCodigo() + " cancelada.\n";
-            msg += horas > 24
-                ? "Seña de $" + senaAntes + " reintegrada como crédito a favor."
-                : "Cancelación con menos de 24hs — seña no reintegrada.";
+            if (senaAntes <= 0) {
+                msg += "Sin seña registrada — no hay importe a reintegrar.";
+            } else if (horas > 24) {
+                msg += "Seña de $" + senaAntes + " reintegrada como crédito a favor.";
+            } else {
+                msg += "Cancelación con menos de 24hs — seña no reintegrada.";
+            }
 
             JOptionPane.showMessageDialog(this, msg, "Reserva cancelada", JOptionPane.INFORMATION_MESSAGE);
             dispose();
@@ -109,8 +115,9 @@ public class CancelarReservaDialog extends JDialog {
     }
 
     private String labelReserva(Reserva r) {
-        return r.getCodigo() + " — " + r.obtenerCliente().getNombre() + " "
-                + r.obtenerCliente().getApellido() + " — " + r.getEspacio().getNombre()
+        return r.getCodigo() + " [" + r.getEstado() + "] — "
+                + r.obtenerCliente().getNombre() + " " + r.obtenerCliente().getApellido()
+                + " — " + r.getEspacio().getNombre()
                 + " — " + new SimpleDateFormat("yyyy-MM-dd").format(r.getFecha());
     }
 }
