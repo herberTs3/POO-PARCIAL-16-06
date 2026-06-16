@@ -111,9 +111,6 @@ public class ReservaController {
         Cliente cliente = reserva.obtenerCliente();
         Descuento descuento = cliente.obtenerDescuentoVigente(reserva.getFecha());
 
-        reserva.calcularPrecioBase();
-        reserva.calcularRecargo();
-
         if (descuento != null) {
             reserva.aplicarDescuento(descuento.obtenerPorcentaje());
         }
