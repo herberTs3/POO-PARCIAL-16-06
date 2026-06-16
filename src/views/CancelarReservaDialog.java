@@ -6,6 +6,7 @@ import java.awt.GridBagLayout;
 import java.awt.Insets;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.regex.Pattern;
 
 import javax.swing.JButton;
 import javax.swing.JDialog;
@@ -17,6 +18,10 @@ import javax.swing.JTextField;
 import controllers.ReservaController;
 
 public class CancelarReservaDialog extends JDialog {
+
+    private static final Pattern PATRON_CODIGO = Pattern.compile("^[A-Za-z0-9]+$");
+    private static final Pattern PATRON_FECHA  = Pattern.compile(
+            "^\\d{4}-(0[1-9]|1[0-2])-(0[1-9]|[12]\\d|3[01])$");
 
     private JTextField txtCodigoReserva;
     private JTextField txtFechaCancelacion;
@@ -36,9 +41,9 @@ public class CancelarReservaDialog extends JDialog {
         gbc.insets = new Insets(8, 10, 8, 10);
         gbc.fill = GridBagConstraints.HORIZONTAL;
 
-        txtCodigoReserva = new JTextField(15);
+        txtCodigoReserva    = new JTextField(15);
         txtFechaCancelacion = new JTextField(15);
-        txtUsuario = new JTextField(15);
+        txtUsuario          = new JTextField(15);
 
         String[] labels = {"Código reserva:", "Fecha cancelación (yyyy-MM-dd):", "Usuario:"};
         java.awt.Component[] fields = {txtCodigoReserva, txtFechaCancelacion, txtUsuario};
@@ -62,13 +67,20 @@ public class CancelarReservaDialog extends JDialog {
     }
 
     private void onCancelar() {
-        String codigo = txtCodigoReserva.getText().trim();
+        String codigo   = txtCodigoReserva.getText().trim();
         String fechaStr = txtFechaCancelacion.getText().trim();
-        String usuario = txtUsuario.getText().trim();
+        String usuario  = txtUsuario.getText().trim();
 
         if (codigo.isEmpty() || fechaStr.isEmpty() || usuario.isEmpty()) {
-            JOptionPane.showMessageDialog(this, "Todos los campos son obligatorios.",
-                    "Error de validación", JOptionPane.ERROR_MESSAGE);
+            mostrarError("Todos los campos son obligatorios.");
+            return;
+        }
+        if (!PATRON_CODIGO.matcher(codigo).matches()) {
+            mostrarError("Código de reserva inválido: solo letras y números.");
+            return;
+        }
+        if (!PATRON_FECHA.matcher(fechaStr).matches()) {
+            mostrarError("Fecha inválida: use el formato yyyy-MM-dd (ej: 2026-07-15).");
             return;
         }
 
@@ -80,7 +92,11 @@ public class CancelarReservaDialog extends JDialog {
                     "Éxito", JOptionPane.INFORMATION_MESSAGE);
             dispose();
         } catch (Exception ex) {
-            JOptionPane.showMessageDialog(this, ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+            mostrarError(ex.getMessage());
         }
+    }
+
+    private void mostrarError(String mensaje) {
+        JOptionPane.showMessageDialog(this, mensaje, "Error de validación", JOptionPane.ERROR_MESSAGE);
     }
 }

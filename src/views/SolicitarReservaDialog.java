@@ -7,6 +7,7 @@ import java.awt.Insets;
 import java.sql.Time;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.regex.Pattern;
 
 import javax.swing.JButton;
 import javax.swing.JComboBox;
@@ -20,6 +21,13 @@ import controllers.ReservaController;
 import models.enums.TipoReserva;
 
 public class SolicitarReservaDialog extends JDialog {
+
+    private static final Pattern PATRON_DNI    = Pattern.compile("^\\d{7,8}$");
+    private static final Pattern PATRON_FECHA  = Pattern.compile(
+            "^\\d{4}-(0[1-9]|1[0-2])-(0[1-9]|[12]\\d|3[01])$");
+    private static final Pattern PATRON_HORA   = Pattern.compile(
+            "^([01]\\d|2[0-3]):[0-5]\\d$");
+    private static final Pattern PATRON_CODIGO = Pattern.compile("^[A-Za-z0-9]+$");
 
     private JTextField txtDni;
     private JTextField txtCodigoComplejo;
@@ -65,60 +73,83 @@ public class SolicitarReservaDialog extends JDialog {
         };
 
         for (int i = 0; i < labels.length; i++) {
-            gbc.gridx = 0;
-            gbc.gridy = i;
-            gbc.weightx = 0;
+            gbc.gridx = 0; gbc.gridy = i; gbc.weightx = 0;
             panel.add(new JLabel(labels[i]), gbc);
-            gbc.gridx = 1;
-            gbc.weightx = 1;
+            gbc.gridx = 1; gbc.weightx = 1;
             panel.add(fields[i], gbc);
         }
 
         JButton btnConfirmar = new JButton("Confirmar");
-        gbc.gridx = 0;
-        gbc.gridy = labels.length;
+        gbc.gridx = 0; gbc.gridy = labels.length;
         gbc.gridwidth = 2;
         gbc.fill = GridBagConstraints.NONE;
         gbc.anchor = GridBagConstraints.CENTER;
         panel.add(btnConfirmar, gbc);
 
         btnConfirmar.addActionListener(e -> onConfirmar());
-
         add(panel);
     }
 
     private void onConfirmar() {
-        String dni = txtDni.getText().trim();
+        String dni            = txtDni.getText().trim();
         String codigoComplejo = txtCodigoComplejo.getText().trim();
-        String codigoEspacio = txtCodigoEspacio.getText().trim();
-        String fechaStr = txtFecha.getText().trim();
-        String horaInicioStr = txtHoraInicio.getText().trim();
-        String horaFinStr = txtHoraFin.getText().trim();
-        String usuario = txtUsuario.getText().trim();
+        String codigoEspacio  = txtCodigoEspacio.getText().trim();
+        String fechaStr       = txtFecha.getText().trim();
+        String horaInicioStr  = txtHoraInicio.getText().trim();
+        String horaFinStr     = txtHoraFin.getText().trim();
+        String usuario        = txtUsuario.getText().trim();
 
         if (dni.isEmpty() || codigoComplejo.isEmpty() || codigoEspacio.isEmpty()
                 || fechaStr.isEmpty() || horaInicioStr.isEmpty() || horaFinStr.isEmpty()
                 || usuario.isEmpty()) {
-            JOptionPane.showMessageDialog(this, "Todos los campos son obligatorios.",
-                    "Error de validación", JOptionPane.ERROR_MESSAGE);
+            mostrarError("Todos los campos son obligatorios.");
+            return;
+        }
+        if (!PATRON_DNI.matcher(dni).matches()) {
+            mostrarError("DNI inválido: debe contener entre 7 y 8 dígitos numéricos.");
+            return;
+        }
+        if (!PATRON_CODIGO.matcher(codigoComplejo).matches()) {
+            mostrarError("Código de complejo inválido: solo letras y números.");
+            return;
+        }
+        if (!PATRON_CODIGO.matcher(codigoEspacio).matches()) {
+            mostrarError("Código de espacio inválido: solo letras y números.");
+            return;
+        }
+        if (!PATRON_FECHA.matcher(fechaStr).matches()) {
+            mostrarError("Fecha inválida: use el formato yyyy-MM-dd (ej: 2026-07-15).");
+            return;
+        }
+        if (!PATRON_HORA.matcher(horaInicioStr).matches()) {
+            mostrarError("Hora de inicio inválida: use el formato HH:mm (ej: 09:30).");
+            return;
+        }
+        if (!PATRON_HORA.matcher(horaFinStr).matches()) {
+            mostrarError("Hora de fin inválida: use el formato HH:mm (ej: 11:00).");
             return;
         }
 
         try {
-            Date fecha = new SimpleDateFormat("yyyy-MM-dd").parse(fechaStr);
-            Time horaInicio = Time.valueOf(horaInicioStr + ":00");
-            Time horaFin = Time.valueOf(horaFinStr + ":00");
-            TipoReserva tipoReserva = (TipoReserva) cmbTipoReserva.getSelectedItem();
+            Date fecha        = new SimpleDateFormat("yyyy-MM-dd").parse(fechaStr);
+            Time horaInicio   = Time.valueOf(horaInicioStr + ":00");
+            Time horaFin      = Time.valueOf(horaFinStr + ":00");
+            TipoReserva tipo  = (TipoReserva) cmbTipoReserva.getSelectedItem();
 
-            models.Reserva reserva = ReservaController.getInstance().solicitarReserva(
-                    dni, codigoComplejo, codigoEspacio, fecha, horaInicio, horaFin,
-                    tipoReserva.name(), usuario);
+            models.Reserva reserva = ReservaController.getInstance()
+                    .solicitarReserva(dni, codigoComplejo, codigoEspacio,
+                            fecha, horaInicio, horaFin, tipo.name(), usuario);
 
-            JOptionPane.showMessageDialog(this, "Reserva registrada con código: " + reserva.getCodigo(),
+            JOptionPane.showMessageDialog(this,
+                    "Reserva registrada con código: " + reserva.getCodigo(),
                     "Éxito", JOptionPane.INFORMATION_MESSAGE);
             dispose();
         } catch (Exception ex) {
-            JOptionPane.showMessageDialog(this, ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+            mostrarError(ex.getMessage());
         }
+    }
+
+    private void mostrarError(String mensaje) {
+        JOptionPane.showMessageDialog(this, mensaje, "Error de validación", JOptionPane.ERROR_MESSAGE);
     }
 }

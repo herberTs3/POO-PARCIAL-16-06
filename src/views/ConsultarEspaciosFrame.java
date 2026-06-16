@@ -6,6 +6,7 @@ import java.sql.Time;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.List;
+import java.util.regex.Pattern;
 
 import javax.swing.JButton;
 import javax.swing.JComboBox;
@@ -23,6 +24,12 @@ import models.EspacioDeportivo;
 import models.enums.TipoEspacio;
 
 public class ConsultarEspaciosFrame extends JFrame {
+
+    private static final Pattern PATRON_FECHA  = Pattern.compile(
+            "^\\d{4}-(0[1-9]|1[0-2])-(0[1-9]|[12]\\d|3[01])$");
+    private static final Pattern PATRON_HORA   = Pattern.compile(
+            "^([01]\\d|2[0-3]):[0-5]\\d$");
+    private static final Pattern PATRON_CODIGO = Pattern.compile("^[A-Za-z0-9]+$");
 
     private JTextField txtCodigoComplejo;
     private JTextField txtFecha;
@@ -44,10 +51,10 @@ public class ConsultarEspaciosFrame extends JFrame {
         JPanel filterPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 8, 6));
 
         txtCodigoComplejo = new JTextField(8);
-        txtFecha = new JTextField(10);
-        txtHoraInicio = new JTextField(6);
-        txtHoraFin = new JTextField(6);
-        cmbTipoEspacio = new JComboBox<>(TipoEspacio.values());
+        txtFecha          = new JTextField(10);
+        txtHoraInicio     = new JTextField(6);
+        txtHoraFin        = new JTextField(6);
+        cmbTipoEspacio    = new JComboBox<>(TipoEspacio.values());
         JButton btnBuscar = new JButton("Buscar");
 
         filterPanel.add(new JLabel("Código complejo:"));
@@ -79,25 +86,40 @@ public class ConsultarEspaciosFrame extends JFrame {
 
     private void onBuscar() {
         String codigoComplejo = txtCodigoComplejo.getText().trim();
-        String fechaStr = txtFecha.getText().trim();
-        String horaInicioStr = txtHoraInicio.getText().trim();
-        String horaFinStr = txtHoraFin.getText().trim();
+        String fechaStr       = txtFecha.getText().trim();
+        String horaInicioStr  = txtHoraInicio.getText().trim();
+        String horaFinStr     = txtHoraFin.getText().trim();
 
         if (codigoComplejo.isEmpty() || fechaStr.isEmpty()
                 || horaInicioStr.isEmpty() || horaFinStr.isEmpty()) {
-            JOptionPane.showMessageDialog(this, "Todos los campos de búsqueda son obligatorios.",
-                    "Error de validación", JOptionPane.ERROR_MESSAGE);
+            mostrarError("Todos los campos de búsqueda son obligatorios.");
+            return;
+        }
+        if (!PATRON_CODIGO.matcher(codigoComplejo).matches()) {
+            mostrarError("Código de complejo inválido: solo letras y números.");
+            return;
+        }
+        if (!PATRON_FECHA.matcher(fechaStr).matches()) {
+            mostrarError("Fecha inválida: use el formato yyyy-MM-dd (ej: 2026-07-15).");
+            return;
+        }
+        if (!PATRON_HORA.matcher(horaInicioStr).matches()) {
+            mostrarError("Hora de inicio inválida: use el formato HH:mm (ej: 09:00).");
+            return;
+        }
+        if (!PATRON_HORA.matcher(horaFinStr).matches()) {
+            mostrarError("Hora de fin inválida: use el formato HH:mm (ej: 11:00).");
             return;
         }
 
         try {
-            Date fecha = new SimpleDateFormat("yyyy-MM-dd").parse(fechaStr);
-            Time horaInicio = Time.valueOf(horaInicioStr + ":00");
-            Time horaFin = Time.valueOf(horaFinStr + ":00");
-            TipoEspacio tipoActividad = (TipoEspacio) cmbTipoEspacio.getSelectedItem();
+            Date fecha       = new SimpleDateFormat("yyyy-MM-dd").parse(fechaStr);
+            Time horaInicio  = Time.valueOf(horaInicioStr + ":00");
+            Time horaFin     = Time.valueOf(horaFinStr + ":00");
+            TipoEspacio tipo = (TipoEspacio) cmbTipoEspacio.getSelectedItem();
 
             List<EspacioDeportivo> espacios = ReservaController.getInstance()
-                    .consultarEspaciosDisponibles(codigoComplejo, fecha, horaInicio, horaFin, tipoActividad);
+                    .consultarEspaciosDisponibles(codigoComplejo, fecha, horaInicio, horaFin, tipo);
 
             tableModel.setRowCount(0);
 
@@ -117,7 +139,11 @@ public class ConsultarEspaciosFrame extends JFrame {
                 });
             }
         } catch (Exception ex) {
-            JOptionPane.showMessageDialog(this, ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+            mostrarError(ex.getMessage());
         }
+    }
+
+    private void mostrarError(String mensaje) {
+        JOptionPane.showMessageDialog(this, mensaje, "Error de validación", JOptionPane.ERROR_MESSAGE);
     }
 }
