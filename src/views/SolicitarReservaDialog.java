@@ -110,11 +110,11 @@ public class SolicitarReservaDialog extends JDialog {
             Time horaFin = Time.valueOf(horaFinStr + ":00");
             TipoReserva tipoReserva = (TipoReserva) cmbTipoReserva.getSelectedItem();
 
-            String codigo = ReservaController.getInstance().solicitarReserva(
+            models.Reserva reserva = ReservaController.getInstance().solicitarReserva(
                     dni, codigoComplejo, codigoEspacio, fecha, horaInicio, horaFin,
                     tipoReserva.name(), usuario);
 
-            JOptionPane.showMessageDialog(this, "Reserva registrada con código: " + codigo,
+            JOptionPane.showMessageDialog(this, "Reserva registrada con código: " + reserva.getCodigo(),
                     "Éxito", JOptionPane.INFORMATION_MESSAGE);
             dispose();
         } catch (Exception ex) {
