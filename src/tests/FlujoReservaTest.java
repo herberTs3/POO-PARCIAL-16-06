@@ -34,7 +34,7 @@ public class FlujoReservaTest {
         passed += run("testClaseGrupalAplicaRecargoDel10Porciento",  FlujoReservaTest::testClaseGrupalAplicaRecargoDel10Porciento);
         passed += run("testSolicitarReservaEstadoIngresada",         FlujoReservaTest::testSolicitarReservaEstadoIngresada);
         passed += run("testConfirmarIniciarYFinalizarReserva",       FlujoReservaTest::testConfirmarIniciarYFinalizarReserva);
-        passed += run("testCancelarConMas24HsDevuelveSenaComoCredito", FlujoReservaTest::testCancelarConMas24HsDevuelveSenaComoCredito);
+        passed += run("testCancelarMenos24HsPermitidoSinCredito",       FlujoReservaTest::testCancelarMenos24HsPermitidoSinCredito);
 
         System.out.println("\nResultado: " + passed + "/5 pasaron, " + (5 - passed) + " fallaron.");
     }
@@ -112,26 +112,35 @@ public class FlujoReservaTest {
             throw new AssertionError("Saldo esperado " + saldoEsperado + " pero fue " + saldo);
     }
 
-    private static void testCancelarConMas24HsDevuelveSenaComoCredito() {
+    private static void testCancelarMenos24HsPermitidoSinCredito() {
+        Calendar cal = Calendar.getInstance();
+        cal.add(Calendar.HOUR_OF_DAY, 10);
+        Date fechaReserva = cal.getTime();
+        Time horaInicio = Time.valueOf(String.format("%02d:%02d:00",
+                cal.get(Calendar.HOUR_OF_DAY), cal.get(Calendar.MINUTE)));
+        Time horaFin = new Time(horaInicio.getTime() + 3_600_000L);
+
         Reserva reserva = ReservaController.getInstance().solicitarReserva(
-                "87654321", "C01", "E02",
-                diasDesdeHoy(5), Time.valueOf("14:00:00"), Time.valueOf("15:00:00"),
+                "11223344", "C02", "E04",
+                fechaReserva, horaInicio, horaFin,
                 "COMUN", "admin");
 
         ReservaController.getInstance().confirmarReservaConSena(
                 reserva.getCodigo(), 300.0, MedioPago.EFECTIVO, "admin");
 
-        Cliente cliente     = reserva.obtenerCliente();
-        double creditoAntes = cliente.getCreditoAFavor();
+        double creditoAntes = reserva.obtenerCliente().getCreditoAFavor();
 
         double devuelto = ReservaController.getInstance().cancelarReserva(
                 reserva.getCodigo(), new Date(), "admin");
 
-        if (Math.abs(devuelto - 300.0) >= 0.01)
-            throw new AssertionError("Devuelto esperado 300.0 pero fue " + devuelto);
+        if (reserva.getEstado() != EstadoReserva.CANCELADA)
+            throw new AssertionError("Deberia poder cancelarse con <24h pero estado fue " + reserva.getEstado());
 
-        if (Math.abs((cliente.getCreditoAFavor() - creditoAntes) - 300.0) >= 0.01)
-            throw new AssertionError("CreditoAFavor no se incremento correctamente");
+        if (Math.abs(devuelto - 0.0) >= 0.01)
+            throw new AssertionError("Sin reembolso esperado con <24h pero devolvio " + devuelto);
+
+        if (Math.abs(reserva.obtenerCliente().getCreditoAFavor() - creditoAntes) >= 0.01)
+            throw new AssertionError("No deberia acreditarse sena con menos de 24hs de anticipacion");
     }
 
     private static Cliente crearCliente() {
