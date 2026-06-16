@@ -115,6 +115,11 @@ public class AgregarEspacioDialog extends JDialog {
 
         String codigoComplejo = complejos.get(cmbComplejo.getSelectedIndex()).getCodigo();
         int capacidad         = Integer.parseInt(capacidadStr);
+        if (capacidad > 10000) {
+            JOptionPane.showMessageDialog(this, "La capacidad no puede superar las 10.000 personas.",
+                    "Error de validación", JOptionPane.ERROR_MESSAGE);
+            return;
+        }
         double precio         = Double.parseDouble(precioStr);
         TipoEspacio tipo      = (TipoEspacio) cmbTipo.getSelectedItem();
 
