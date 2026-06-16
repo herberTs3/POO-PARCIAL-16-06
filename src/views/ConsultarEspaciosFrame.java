@@ -2,20 +2,13 @@ package views;
 
 import java.awt.BorderLayout;
 import java.awt.GridBagConstraints;
-import java.awt.GridBagLayout;
-import java.awt.Insets;
 import java.sql.Time;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.List;
 
-import javax.swing.JButton;
 import javax.swing.JComboBox;
 import javax.swing.JFrame;
-import javax.swing.JLabel;
-import javax.swing.JOptionPane;
-import javax.swing.JPanel;
-import javax.swing.JScrollPane;
 import javax.swing.JTable;
 import javax.swing.JTextField;
 import javax.swing.table.DefaultTableModel;
@@ -38,7 +31,7 @@ public class ConsultarEspaciosFrame extends JFrame {
     private List<ComplejoDeportivo> complejos;
 
     public ConsultarEspaciosFrame() {
-        setTitle("Consultar Espacios Disponibles");
+        setTitle(Textos.Titulo.CONSULTAR_ESPACIOS);
         setSize(750, 420);
         setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
         setLocationRelativeTo(null);
@@ -49,65 +42,48 @@ public class ConsultarEspaciosFrame extends JFrame {
     private void initComponents() {
         complejos = ComplejoDeportivoController.getInstance().listarTodos();
 
-        JPanel filterPanel = new JPanel(new GridBagLayout());
-        GridBagConstraints gbc = new GridBagConstraints();
-        gbc.insets = new Insets(6, 10, 6, 10);
-        gbc.fill = GridBagConstraints.HORIZONTAL;
+        var filterPanel = UI.formPanel();
+        GridBagConstraints gbc = UI.gbc(6);
 
-        cmbComplejo = new JComboBox<>();
+        cmbComplejo = UI.combo();
         for (ComplejoDeportivo cp : complejos) {
             cmbComplejo.addItem(cp.getCodigo() + " — " + cp.getNombre());
         }
 
-        txtFecha      = new JTextField(12);
-        txtHoraInicio = new JTextField(8);
-        txtHoraFin    = new JTextField(8);
+        txtFecha      = UI.field(12);
+        txtHoraInicio = UI.field(8);
+        txtHoraFin    = UI.field(8);
 
         String[] tipoOpciones = new String[TipoEspacio.values().length + 1];
-        tipoOpciones[0] = "TODOS";
+        tipoOpciones[0] = Textos.Lbl.TODOS;
         for (int i = 0; i < TipoEspacio.values().length; i++) {
             tipoOpciones[i + 1] = TipoEspacio.values()[i].name();
         }
         cmbTipoEspacio = new JComboBox<>(tipoOpciones);
 
-        JButton btnBuscar = new JButton("Buscar");
-
         String[] labels = {
-            "Complejo:", "Fecha (yyyy-MM-dd, opcional):",
-            "Hora inicio (HH:mm, opcional):", "Hora fin (HH:mm, opcional):", "Tipo:"
+            Textos.Lbl.COMPLEJO, Textos.Lbl.FECHA_OPCIONAL,
+            Textos.Lbl.HORA_INICIO_OPCIONAL, Textos.Lbl.HORA_FIN_OPCIONAL, Textos.Lbl.TIPO
         };
-        java.awt.Component[] fields = { cmbComplejo, txtFecha, txtHoraInicio, txtHoraFin, cmbTipoEspacio };
+        java.awt.Component[] fields = {cmbComplejo, txtFecha, txtHoraInicio, txtHoraFin, cmbTipoEspacio};
 
         for (int i = 0; i < labels.length; i++) {
-            gbc.gridx = 0; gbc.gridy = i; gbc.weightx = 0;
-            filterPanel.add(new JLabel(labels[i]), gbc);
-            gbc.gridx = 1; gbc.weightx = 1;
-            filterPanel.add(fields[i], gbc);
+            UI.addFila(filterPanel, gbc, i, labels[i], fields[i]);
         }
 
-        gbc.gridx = 0; gbc.gridy = labels.length; gbc.gridwidth = 2;
-        gbc.fill = GridBagConstraints.NONE; gbc.anchor = GridBagConstraints.CENTER;
-        filterPanel.add(btnBuscar, gbc);
-
-        String[] columns = {"Código", "Nombre", "Tipo", "Capacidad", "Precio/hora", "Superficie"};
-        tableModel = new DefaultTableModel(columns, 0) {
-            @Override
-            public boolean isCellEditable(int row, int column) { return false; }
-        };
-
-        JTable table = new JTable(tableModel);
+        var btnBuscar = UI.button(Textos.Btn.BUSCAR);
+        UI.addButton(filterPanel, gbc, labels.length, btnBuscar);
         btnBuscar.addActionListener(e -> onBuscar());
 
+        tableModel = UI.tableModel(Textos.Tabla.ESPACIOS);
+        var table = new JTable(tableModel);
+
         add(filterPanel, BorderLayout.NORTH);
-        add(new JScrollPane(table), BorderLayout.CENTER);
+        add(UI.scrollPane(table), BorderLayout.CENTER);
     }
 
     private void onBuscar() {
-        if (complejos.isEmpty()) {
-            JOptionPane.showMessageDialog(this, "No hay complejos registrados.",
-                    "Error", JOptionPane.ERROR_MESSAGE);
-            return;
-        }
+        if (complejos.isEmpty()) { UI.error(this, Textos.Msg.SIN_COMPLEJOS); return; }
 
         String fechaStr      = txtFecha.getText().trim();
         String horaInicioStr = txtHoraInicio.getText().trim();
@@ -117,26 +93,22 @@ public class ConsultarEspaciosFrame extends JFrame {
 
         if (tieneFiltroHorario) {
             if (fechaStr.isEmpty() || horaInicioStr.isEmpty() || horaFinStr.isEmpty()) {
-                JOptionPane.showMessageDialog(this, "Si ingresa fecha u horario, los tres campos son obligatorios.",
-                        "Error de validación", JOptionPane.ERROR_MESSAGE);
+                UI.error(this, Textos.Msg.FILTRO_HORARIO_INCOMPLETO);
                 return;
             }
             String error = Validador.primerError(
-                Validador.fechaFutura(fechaStr),
+                Validador.fecha(fechaStr),
                 Validador.hora("Hora inicio", horaInicioStr),
                 Validador.hora("Hora fin", horaFinStr),
                 Validador.horasOrdenadas(horaInicioStr, horaFinStr)
             );
-            if (error != null) {
-                JOptionPane.showMessageDialog(this, error, "Error de validación", JOptionPane.ERROR_MESSAGE);
-                return;
-            }
+            if (error != null) { UI.errorValidacion(this, error); return; }
         }
 
         try {
             String codigoComplejo = complejos.get(cmbComplejo.getSelectedIndex()).getCodigo();
             String seleccion      = (String) cmbTipoEspacio.getSelectedItem();
-            TipoEspacio tipo      = "TODOS".equals(seleccion) ? null : TipoEspacio.valueOf(seleccion);
+            TipoEspacio tipo      = Textos.Lbl.TODOS.equals(seleccion) ? null : TipoEspacio.valueOf(seleccion);
 
             Date fecha      = null;
             Time horaInicio = null;
@@ -153,23 +125,18 @@ public class ConsultarEspaciosFrame extends JFrame {
             tableModel.setRowCount(0);
 
             if (espacios.isEmpty()) {
-                JOptionPane.showMessageDialog(this, "No hay espacios disponibles con esos criterios.",
-                        "Sin resultados", JOptionPane.INFORMATION_MESSAGE);
+                UI.info(this, Textos.Msg.SIN_ESPACIOS_RESULTADO, Textos.Titulo.SIN_RESULTADOS);
                 return;
             }
 
             for (EspacioDeportivo e : espacios) {
                 tableModel.addRow(new Object[]{
-                    e.getCodigo(),
-                    e.getNombre(),
-                    e.getTipoEspacio(),
-                    e.getCapacidad(),
-                    "$" + e.getPrecioBaseHora(),
-                    e.getSuperficie()
+                    e.getCodigo(), e.getNombre(), e.getTipoEspacio(),
+                    e.getCapacidad(), "$" + e.getPrecioBaseHora(), e.getSuperficie()
                 });
             }
         } catch (Exception ex) {
-            JOptionPane.showMessageDialog(this, ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+            UI.error(this, ex.getMessage());
         }
     }
 }

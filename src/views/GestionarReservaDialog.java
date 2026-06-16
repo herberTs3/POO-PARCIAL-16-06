@@ -2,16 +2,11 @@ package views;
 
 import java.awt.Frame;
 import java.awt.GridBagConstraints;
-import java.awt.GridBagLayout;
-import java.awt.Insets;
+import java.text.SimpleDateFormat;
 import java.util.List;
 
-import javax.swing.JButton;
 import javax.swing.JComboBox;
 import javax.swing.JDialog;
-import javax.swing.JLabel;
-import javax.swing.JOptionPane;
-import javax.swing.JPanel;
 
 import controllers.ReservaController;
 import models.Reserva;
@@ -27,7 +22,7 @@ public class GestionarReservaDialog extends JDialog {
     private String usuario;
 
     public GestionarReservaDialog(Frame parent, String usuario) {
-        super(parent, "Gestionar Uso de Reserva", true);
+        super(parent, Textos.Titulo.GESTIONAR_RESERVA, true);
         this.usuario = usuario;
         setSize(480, 260);
         setLocationRelativeTo(parent);
@@ -41,56 +36,37 @@ public class GestionarReservaDialog extends JDialog {
         for (Reserva r : ReservaController.getInstance().listarPorEstado(EstadoReserva.CONFIRMADA)) {
             java.util.Calendar cal = java.util.Calendar.getInstance();
             cal.setTime(r.getFecha());
-            if (cal.get(java.util.Calendar.YEAR)         == hoy.get(java.util.Calendar.YEAR)
-             && cal.get(java.util.Calendar.DAY_OF_YEAR)  == hoy.get(java.util.Calendar.DAY_OF_YEAR)) {
+            if (cal.get(java.util.Calendar.YEAR)        == hoy.get(java.util.Calendar.YEAR)
+             && cal.get(java.util.Calendar.DAY_OF_YEAR) == hoy.get(java.util.Calendar.DAY_OF_YEAR)) {
                 confirmadas.add(r);
             }
         }
         enCurso = ReservaController.getInstance().listarPorEstado(EstadoReserva.EN_CURSO);
 
-        JPanel panel = new JPanel(new GridBagLayout());
-        GridBagConstraints gbc = new GridBagConstraints();
-        gbc.insets = new Insets(6, 10, 6, 10);
-        gbc.fill = GridBagConstraints.HORIZONTAL;
-        int row = 0;
+        var panel = UI.formPanel();
+        GridBagConstraints gbc = UI.gbc(6);
 
-        gbc.gridx = 0; gbc.gridy = row; gbc.gridwidth = 2;
-        panel.add(new JLabel("── Iniciar uso (CONFIRMADA → EN CURSO) ──"), gbc);
+        gbc.gridx = 0; gbc.gridy = 0; gbc.gridwidth = 2;
+        panel.add(UI.label(Textos.Lbl.SEPARADOR_INICIAR), gbc);
         gbc.gridwidth = 1;
 
-        row++;
-        cmbReservaIniciar = new JComboBox<>();
+        cmbReservaIniciar = UI.combo();
         for (Reserva r : confirmadas) cmbReservaIniciar.addItem(labelReserva(r));
-        gbc.gridx = 0; gbc.gridy = row; gbc.weightx = 0;
-        panel.add(new JLabel("Reserva:"), gbc);
-        gbc.gridx = 1; gbc.weightx = 1;
-        panel.add(cmbReservaIniciar, gbc);
+        UI.addFila(panel, gbc, 1, Textos.Lbl.RESERVA, cmbReservaIniciar);
 
-        row++;
-        JButton btnIniciar = new JButton("Iniciar Uso");
-        gbc.gridx = 0; gbc.gridy = row; gbc.gridwidth = 2;
-        gbc.fill = GridBagConstraints.NONE; gbc.anchor = GridBagConstraints.CENTER;
-        panel.add(btnIniciar, gbc);
-        gbc.fill = GridBagConstraints.HORIZONTAL; gbc.gridwidth = 1;
+        var btnIniciar = UI.button(Textos.Btn.INICIAR_USO);
+        UI.addButton(panel, gbc, 2, btnIniciar);
 
-        row++;
-        gbc.gridx = 0; gbc.gridy = row; gbc.gridwidth = 2;
-        panel.add(new JLabel("── Finalizar uso (EN CURSO → FINALIZADA) ──"), gbc);
+        gbc.gridx = 0; gbc.gridy = 3; gbc.gridwidth = 2;
+        panel.add(UI.label(Textos.Lbl.SEPARADOR_FINALIZAR), gbc);
         gbc.gridwidth = 1;
 
-        row++;
-        cmbReservaFinalizar = new JComboBox<>();
+        cmbReservaFinalizar = UI.combo();
         for (Reserva r : enCurso) cmbReservaFinalizar.addItem(labelReserva(r));
-        gbc.gridx = 0; gbc.gridy = row; gbc.weightx = 0;
-        panel.add(new JLabel("Reserva:"), gbc);
-        gbc.gridx = 1; gbc.weightx = 1;
-        panel.add(cmbReservaFinalizar, gbc);
+        UI.addFila(panel, gbc, 4, Textos.Lbl.RESERVA, cmbReservaFinalizar);
 
-        row++;
-        JButton btnFinalizar = new JButton("Finalizar y Calcular Saldo");
-        gbc.gridx = 0; gbc.gridy = row; gbc.gridwidth = 2;
-        gbc.fill = GridBagConstraints.NONE; gbc.anchor = GridBagConstraints.CENTER;
-        panel.add(btnFinalizar, gbc);
+        var btnFinalizar = UI.button(Textos.Btn.FINALIZAR);
+        UI.addButton(panel, gbc, 5, btnFinalizar);
 
         btnIniciar.addActionListener(e -> onIniciar());
         btnFinalizar.addActionListener(e -> onFinalizar());
@@ -99,33 +75,29 @@ public class GestionarReservaDialog extends JDialog {
 
     private void onIniciar() {
         if (confirmadas.isEmpty()) {
-            JOptionPane.showMessageDialog(this, "No hay reservas en estado CONFIRMADA.",
-                    "Sin reservas", JOptionPane.WARNING_MESSAGE);
+            UI.warning(this, Textos.Msg.SIN_CONFIRMADAS, Textos.Titulo.SIN_RESERVAS);
             return;
         }
         try {
             Reserva r = confirmadas.get(cmbReservaIniciar.getSelectedIndex());
             ReservaController.getInstance().iniciarUso(r.getCodigo(), usuario);
-            JOptionPane.showMessageDialog(this,
-                    "Reserva " + r.getCodigo() + " pasó a EN CURSO.",
-                    "Éxito", JOptionPane.INFORMATION_MESSAGE);
+            UI.info(this, "Reserva " + r.getCodigo() + " pasó a EN CURSO.", Textos.Titulo.EXITO);
             dispose();
         } catch (Exception ex) {
-            JOptionPane.showMessageDialog(this, ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+            UI.error(this, ex.getMessage());
         }
     }
 
     private void onFinalizar() {
         if (enCurso.isEmpty()) {
-            JOptionPane.showMessageDialog(this, "No hay reservas en estado EN CURSO.",
-                    "Sin reservas", JOptionPane.WARNING_MESSAGE);
+            UI.warning(this, Textos.Msg.SIN_EN_CURSO, Textos.Titulo.SIN_RESERVAS);
             return;
         }
         try {
-            Reserva r      = enCurso.get(cmbReservaFinalizar.getSelectedIndex());
-            double saldo   = ReservaController.getInstance().finalizarReserva(r.getCodigo(), usuario);
-            double total   = r.calcularTotal();
-            double sena    = r.obtenerImporteSena();
+            Reserva r    = enCurso.get(cmbReservaFinalizar.getSelectedIndex());
+            double saldo = ReservaController.getInstance().finalizarReserva(r.getCodigo(), usuario);
+            double total = r.calcularTotal();
+            double sena  = r.obtenerImporteSena();
 
             String msg = "Reserva " + r.getCodigo() + " finalizada.\n\n"
                     + "Precio base:  $" + r.calcularPrecioBase() + "\n"
@@ -134,16 +106,16 @@ public class GestionarReservaDialog extends JDialog {
                     + "Seña pagada:  $" + sena + "\n"
                     + "Saldo pendiente: $" + saldo;
 
-            JOptionPane.showMessageDialog(this, msg, "Reserva finalizada", JOptionPane.INFORMATION_MESSAGE);
+            UI.info(this, msg, Textos.Titulo.RESERVA_FINALIZADA);
             dispose();
         } catch (Exception ex) {
-            JOptionPane.showMessageDialog(this, ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+            UI.error(this, ex.getMessage());
         }
     }
 
     private String labelReserva(Reserva r) {
         return r.getCodigo() + " — " + r.obtenerCliente().getNombre() + " "
                 + r.obtenerCliente().getApellido() + " — " + r.getEspacio().getNombre()
-                + " — " + new java.text.SimpleDateFormat("yyyy-MM-dd").format(r.getFecha());
+                + " — " + new SimpleDateFormat("yyyy-MM-dd").format(r.getFecha());
     }
 }
