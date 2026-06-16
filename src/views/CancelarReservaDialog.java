@@ -69,15 +69,13 @@ public class CancelarReservaDialog extends JDialog {
         }
 
         try {
-            Reserva reserva  = reservas.get(cmbReserva.getSelectedIndex());
-            double senaAntes = reserva.obtenerImporteSena();
-
-            ReservaController.getInstance().cancelarReserva(reserva.getCodigo(), new Date(), usuario);
+            Reserva reserva     = reservas.get(cmbReserva.getSelectedIndex());
+            double creditado    = ReservaController.getInstance().cancelarReserva(reserva.getCodigo(), new Date(), usuario);
 
             String msg = "Reserva " + reserva.getCodigo() + " cancelada.\n";
-            msg += senaAntes > 0
-                    ? "Seña de $" + senaAntes + " reintegrada como crédito a favor."
-                    : "Sin seña registrada — no hay importe a reintegrar.";
+            msg += creditado > 0
+                    ? "Seña de $" + creditado + " reintegrada como crédito a favor."
+                    : "Sin reintegro de seña (menos de 24h de anticipación o sin seña registrada).";
 
             JOptionPane.showMessageDialog(this, msg, "Reserva cancelada", JOptionPane.INFORMATION_MESSAGE);
             dispose();

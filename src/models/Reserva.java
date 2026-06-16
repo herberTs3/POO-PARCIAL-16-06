@@ -26,7 +26,7 @@ public abstract class Reserva {
     public Reserva() {}
 
     public void inicializar(Cliente cliente, ComplejoDeportivo complejo, EspacioDeportivo espacio,
-                             Date fecha, Time horaInicio, Time horaFin) {
+                             Date fecha, Time horaInicio, Time horaFin, String tipoReserva) {
         this.codigo = UUID.randomUUID().toString().substring(0, 8).toUpperCase();
         this.cliente = cliente;
         this.complejo = complejo;

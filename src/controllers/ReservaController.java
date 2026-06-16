@@ -53,7 +53,7 @@ public class ReservaController {
         }
 
         Reserva reserva = crearInstanciaReserva(tipoReserva);
-        reserva.inicializar(clienteEncontrado, complejoEncontrado, espacioEncontrado, fecha, horaInicio, horaFin);
+        reserva.inicializar(clienteEncontrado, complejoEncontrado, espacioEncontrado, fecha, horaInicio, horaFin, tipoReserva);
         reserva.cambiarEstado(EstadoReserva.INGRESADA, usuario);
         espacioEncontrado.ocuparSlot(fecha, horaInicio, horaFin);
         reservas.put(reserva.getCodigo(), reserva);
@@ -82,19 +82,15 @@ public class ReservaController {
         );
     }
 
-    public void cancelarReserva(String codigoReserva, Date fechaCancelacion, String usuario) {
+    public double cancelarReserva(String codigoReserva, Date fechaCancelacion, String usuario) {
         Reserva reserva = buscarPorCodigo(codigoReserva);
         if (reserva == null) throw new IllegalArgumentException("Reserva no encontrada: " + codigoReserva);
 
-        long horasAnticipacion = reserva.calcularHorasAnticipacion(fechaCancelacion);
-        if (horasAnticipacion < 24) {
-            throw new IllegalStateException(
-                "No se puede cancelar: faltan menos de 24 horas para la reserva (" + horasAnticipacion + "h de anticipación).");
-        }
-
         Cliente cliente = reserva.obtenerCliente();
+        long horasAnticipacion = reserva.calcularHorasAnticipacion(fechaCancelacion);
         double importeSena = reserva.obtenerImporteSena();
-        if (importeSena > 0) {
+
+        if (horasAnticipacion > 24) {
             cliente.agregarCredito(importeSena);
         }
 
@@ -103,6 +99,7 @@ public class ReservaController {
         HistorialController.getInstance().registrarCambio(
             "CONFIRMADA", "CANCELADA", "Reserva", codigoReserva, usuario
         );
+        return horasAnticipacion > 24 ? importeSena : 0;
     }
 
     public double finalizarReserva(String codigoReserva, String usuario) {
@@ -118,7 +115,7 @@ public class ReservaController {
         reserva.calcularRecargo();
 
         if (descuento != null) {
-            reserva.aplicarDescuento(descuento.getPorcentaje());
+            reserva.aplicarDescuento(descuento.obtenerPorcentaje());
         }
 
         double saldoPendiente = reserva.calcularSaldoPendiente();
@@ -138,9 +135,11 @@ public class ReservaController {
         List<EspacioDeportivo> resultado = new ArrayList<>();
         for (EspacioDeportivo espacio : complejo.obtenerEspacios()) {
             boolean coincideTipo = tipoActividad == null || espacio.coincideTipoActividad(tipoActividad);
-            boolean disponible   = fecha == null || espacio.estaDisponible(fecha, horaInicio, horaFin);
-            if (coincideTipo && disponible) {
-                resultado.add(espacio);
+            if (coincideTipo) {
+                boolean disponible = fecha == null || espacio.estaDisponible(fecha, horaInicio, horaFin);
+                if (disponible) {
+                    resultado.add(espacio);
+                }
             }
         }
         return resultado;

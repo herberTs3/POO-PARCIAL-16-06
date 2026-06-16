@@ -174,7 +174,7 @@ public class ConsultasFrame extends JFrame {
             double recargo     = rv.calcularRecargo();
             double pctRecargo  = precioBase > 0 ? (recargo / precioBase) * 100 : 0;
             models.Descuento desc = rv.obtenerCliente().obtenerDescuentoVigente(rv.getFecha());
-            double pctDesc     = desc != null ? desc.getPorcentaje() : 0;
+            double pctDesc     = desc != null ? desc.obtenerPorcentaje() : 0;
             rv.aplicarDescuento(pctDesc);
             double total       = rv.calcularTotal();
 

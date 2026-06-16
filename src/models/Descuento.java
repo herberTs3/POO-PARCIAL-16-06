@@ -18,7 +18,7 @@ public class Descuento {
         return !fecha.before(fechaDesde) && !fecha.after(fechaHasta);
     }
 
-    public double getPorcentaje() { return porcentaje; }
+    public double obtenerPorcentaje() { return porcentaje; }
     public Date getFechaDesde() { return fechaDesde; }
     public Date getFechaHasta() { return fechaHasta; }
 }

@@ -60,7 +60,7 @@ public class ReservaTest {
     private static void testReservaTorneoRecargo20() {
         ReservaTorneo reserva = new ReservaTorneo();
         reserva.inicializar(crearCliente(), crearComplejo(), crearEspacio(),
-                new Date(), Time.valueOf("10:00:00"), Time.valueOf("11:00:00"));
+                new Date(), Time.valueOf("10:00:00"), Time.valueOf("11:00:00"), "TORNEO");
         double recargo = reserva.calcularRecargo();
         if (Math.abs(recargo - 20.0) >= 0.01) {
             throw new AssertionError("Esperado 20.0 pero fue " + recargo);
@@ -70,7 +70,7 @@ public class ReservaTest {
     private static void testReservaClaseGrupalRecargo10() {
         ReservaClaseGrupal reserva = new ReservaClaseGrupal();
         reserva.inicializar(crearCliente(), crearComplejo(), crearEspacio(),
-                new Date(), Time.valueOf("10:00:00"), Time.valueOf("11:00:00"));
+                new Date(), Time.valueOf("10:00:00"), Time.valueOf("11:00:00"), "CLASE_GRUPAL");
         double recargo = reserva.calcularRecargo();
         if (Math.abs(recargo - 10.0) >= 0.01) {
             throw new AssertionError("Esperado 10.0 pero fue " + recargo);
@@ -80,7 +80,7 @@ public class ReservaTest {
     private static void testReservaComunSinRecargo() {
         ReservaComun reserva = new ReservaComun();
         reserva.inicializar(crearCliente(), crearComplejo(), crearEspacio(),
-                new Date(), Time.valueOf("10:00:00"), Time.valueOf("11:00:00"));
+                new Date(), Time.valueOf("10:00:00"), Time.valueOf("11:00:00"), "COMUN");
         double recargo = reserva.calcularRecargo();
         if (Math.abs(recargo - 0.0) >= 0.01) {
             throw new AssertionError("Esperado 0.0 pero fue " + recargo);
@@ -96,7 +96,7 @@ public class ReservaTest {
         Date fechaReserva = cal.getTime();
 
         reserva.inicializar(cliente, crearComplejo(), crearEspacio(),
-                fechaReserva, Time.valueOf("10:00:00"), Time.valueOf("11:00:00"));
+                fechaReserva, Time.valueOf("10:00:00"), Time.valueOf("11:00:00"), "COMUN");
         reserva.registrarImporteSena(500.0);
 
         long horasAnticipacion = reserva.calcularHorasAnticipacion(new Date());
@@ -122,7 +122,7 @@ public class ReservaTest {
         Time horaInicio = Time.valueOf(String.format("%02d:%02d:00", h, m));
 
         reserva.inicializar(cliente, crearComplejo(), crearEspacio(),
-                fechaReserva, horaInicio, new Time(cal.getTimeInMillis() + 3_600_000L));
+                fechaReserva, horaInicio, new Time(cal.getTimeInMillis() + 3_600_000L), "COMUN");
         reserva.registrarImporteSena(500.0);
 
         long horasAnticipacion = reserva.calcularHorasAnticipacion(new Date());
