@@ -50,42 +50,52 @@ public class ConsultasFrame extends JFrame {
     }
 
     private JPanel buildTabRecaudado() {
-        JPanel panel = new JPanel(new GridBagLayout());
+        JPanel inner = new JPanel(new GridBagLayout());
         GridBagConstraints gbc = new GridBagConstraints();
         gbc.insets = new Insets(10, 12, 10, 12);
         gbc.fill = GridBagConstraints.HORIZONTAL;
 
         JComboBox<String> cmbComplejo = new JComboBox<>();
         for (ComplejoDeportivo cp : complejos) cmbComplejo.addItem(cp.getCodigo() + " — " + cp.getNombre());
-        JTextField txtDesde  = new JTextField("2026-01-01", 12);
-        JTextField txtHasta  = new JTextField(new SimpleDateFormat("yyyy-MM-dd").format(new Date()), 12);
+        JTextField txtDesde  = new JTextField(12);
+        JTextField txtHasta  = new JTextField(12);
         JLabel lblResultado  = new JLabel("—");
         JButton btnCalcular  = new JButton("Calcular");
 
         int r = 0;
-        addFila(panel, gbc, r++, "Complejo:", cmbComplejo);
-        addFila(panel, gbc, r++, "Desde (yyyy-MM-dd):", txtDesde);
-        addFila(panel, gbc, r++, "Hasta (yyyy-MM-dd):", txtHasta);
-        addFila(panel, gbc, r++, "Total recaudado:", lblResultado);
+        addFila(inner, gbc, r++, "Complejo:", cmbComplejo);
+        addFila(inner, gbc, r++, "Desde (yyyy-MM-dd, opcional):", txtDesde);
+        addFila(inner, gbc, r++, "Hasta (yyyy-MM-dd, opcional):", txtHasta);
+        addFila(inner, gbc, r++, "Total recaudado:", lblResultado);
 
         gbc.gridx = 0; gbc.gridy = r; gbc.gridwidth = 2;
         gbc.fill = GridBagConstraints.NONE; gbc.anchor = GridBagConstraints.CENTER;
-        panel.add(btnCalcular, gbc);
+        inner.add(btnCalcular, gbc);
 
         btnCalcular.addActionListener(e -> {
-            if (complejos.isEmpty()) { showError(panel, "No hay complejos registrados."); return; }
-            String err = Validador.primerError(Validador.fecha(txtDesde.getText().trim()), Validador.fecha(txtHasta.getText().trim()));
-            if (err != null) { showError(panel, err); return; }
+            if (complejos.isEmpty()) { showError(inner, "No hay complejos registrados."); return; }
+            String desdeStr = txtDesde.getText().trim();
+            String hastaStr = txtHasta.getText().trim();
+            if (!desdeStr.isEmpty()) {
+                String err = Validador.fecha(desdeStr);
+                if (err != null) { showError(inner, err); return; }
+            }
+            if (!hastaStr.isEmpty()) {
+                String err = Validador.fecha(hastaStr);
+                if (err != null) { showError(inner, err); return; }
+            }
             try {
                 String cod   = complejos.get(cmbComplejo.getSelectedIndex()).getCodigo();
-                Date desde   = new SimpleDateFormat("yyyy-MM-dd").parse(txtDesde.getText().trim());
-                Date hasta   = new SimpleDateFormat("yyyy-MM-dd").parse(txtHasta.getText().trim());
+                Date desde   = desdeStr.isEmpty() ? null : new SimpleDateFormat("yyyy-MM-dd").parse(desdeStr);
+                Date hasta   = hastaStr.isEmpty() ? null : new SimpleDateFormat("yyyy-MM-dd").parse(hastaStr);
                 double total = ReservaController.getInstance().totalRecaudadoPorComplejo(cod, desde, hasta);
                 lblResultado.setText("$" + String.format("%.2f", total));
-            } catch (Exception ex) { showError(panel, ex.getMessage()); }
+            } catch (Exception ex) { showError(inner, ex.getMessage()); }
         });
 
-        return panel;
+        JPanel outer = new JPanel(new BorderLayout());
+        outer.add(inner, BorderLayout.NORTH);
+        return outer;
     }
 
     private JPanel buildTabReservasCliente() {
@@ -134,7 +144,7 @@ public class ConsultasFrame extends JFrame {
     }
 
     private JPanel buildTabRecargo() {
-        JPanel panel = new JPanel(new GridBagLayout());
+        JPanel inner = new JPanel(new GridBagLayout());
         GridBagConstraints gbc = new GridBagConstraints();
         gbc.insets = new Insets(10, 12, 10, 12);
         gbc.fill = GridBagConstraints.HORIZONTAL;
@@ -148,17 +158,17 @@ public class ConsultasFrame extends JFrame {
         JButton btnCalcular = new JButton("Calcular");
 
         int r = 0;
-        addFila(panel, gbc, r++, "Reserva:", cmbReserva);
-        addFila(panel, gbc, r++, "Tipo reserva:", lblTipo);
-        addFila(panel, gbc, r++, "% Recargo:", lblRecargo);
-        addFila(panel, gbc, r++, "% Descuento cliente:", lblDescuento);
-        addFila(panel, gbc, r++, "Total estimado:", lblTotal);
+        addFila(inner, gbc, r++, "Reserva:", cmbReserva);
+        addFila(inner, gbc, r++, "Tipo reserva:", lblTipo);
+        addFila(inner, gbc, r++, "% Recargo:", lblRecargo);
+        addFila(inner, gbc, r++, "% Descuento cliente:", lblDescuento);
+        addFila(inner, gbc, r++, "Total estimado:", lblTotal);
         gbc.gridx = 0; gbc.gridy = r; gbc.gridwidth = 2;
         gbc.fill = GridBagConstraints.NONE; gbc.anchor = GridBagConstraints.CENTER;
-        panel.add(btnCalcular, gbc);
+        inner.add(btnCalcular, gbc);
 
         btnCalcular.addActionListener(e -> {
-            if (todasReservas.isEmpty()) { showError(panel, "No hay reservas registradas."); return; }
+            if (todasReservas.isEmpty()) { showError(inner, "No hay reservas registradas."); return; }
             Reserva rv = todasReservas.get(cmbReserva.getSelectedIndex());
             double precioBase  = rv.calcularPrecioBase();
             double recargo     = rv.calcularRecargo();
@@ -174,7 +184,9 @@ public class ConsultasFrame extends JFrame {
             lblTotal.setText("$" + String.format("%.2f", total));
         });
 
-        return panel;
+        JPanel outer = new JPanel(new BorderLayout());
+        outer.add(inner, BorderLayout.NORTH);
+        return outer;
     }
 
     private void addFila(JPanel panel, GridBagConstraints gbc, int row, String label, java.awt.Component field) {

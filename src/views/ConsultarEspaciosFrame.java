@@ -1,7 +1,9 @@
 package views;
 
 import java.awt.BorderLayout;
-import java.awt.FlowLayout;
+import java.awt.GridBagConstraints;
+import java.awt.GridBagLayout;
+import java.awt.Insets;
 import java.sql.Time;
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -47,16 +49,19 @@ public class ConsultarEspaciosFrame extends JFrame {
     private void initComponents() {
         complejos = ComplejoDeportivoController.getInstance().listarTodos();
 
-        JPanel filterPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 8, 8));
+        JPanel filterPanel = new JPanel(new GridBagLayout());
+        GridBagConstraints gbc = new GridBagConstraints();
+        gbc.insets = new Insets(6, 10, 6, 10);
+        gbc.fill = GridBagConstraints.HORIZONTAL;
 
         cmbComplejo = new JComboBox<>();
         for (ComplejoDeportivo cp : complejos) {
             cmbComplejo.addItem(cp.getCodigo() + " — " + cp.getNombre());
         }
 
-        txtFecha      = new JTextField(10);
-        txtHoraInicio = new JTextField(6);
-        txtHoraFin    = new JTextField(6);
+        txtFecha      = new JTextField(12);
+        txtHoraInicio = new JTextField(8);
+        txtHoraFin    = new JTextField(8);
 
         String[] tipoOpciones = new String[TipoEspacio.values().length + 1];
         tipoOpciones[0] = "TODOS";
@@ -67,17 +72,22 @@ public class ConsultarEspaciosFrame extends JFrame {
 
         JButton btnBuscar = new JButton("Buscar");
 
-        filterPanel.add(new JLabel("Complejo:"));
-        filterPanel.add(cmbComplejo);
-        filterPanel.add(new JLabel("Fecha (yyyy-MM-dd):"));
-        filterPanel.add(txtFecha);
-        filterPanel.add(new JLabel("Hora inicio:"));
-        filterPanel.add(txtHoraInicio);
-        filterPanel.add(new JLabel("Hora fin:"));
-        filterPanel.add(txtHoraFin);
-        filterPanel.add(new JLabel("Tipo:"));
-        filterPanel.add(cmbTipoEspacio);
-        filterPanel.add(btnBuscar);
+        String[] labels = {
+            "Complejo:", "Fecha (yyyy-MM-dd, opcional):",
+            "Hora inicio (HH:mm, opcional):", "Hora fin (HH:mm, opcional):", "Tipo:"
+        };
+        java.awt.Component[] fields = { cmbComplejo, txtFecha, txtHoraInicio, txtHoraFin, cmbTipoEspacio };
+
+        for (int i = 0; i < labels.length; i++) {
+            gbc.gridx = 0; gbc.gridy = i; gbc.weightx = 0;
+            filterPanel.add(new JLabel(labels[i]), gbc);
+            gbc.gridx = 1; gbc.weightx = 1;
+            filterPanel.add(fields[i], gbc);
+        }
+
+        gbc.gridx = 0; gbc.gridy = labels.length; gbc.gridwidth = 2;
+        gbc.fill = GridBagConstraints.NONE; gbc.anchor = GridBagConstraints.CENTER;
+        filterPanel.add(btnBuscar, gbc);
 
         String[] columns = {"Código", "Nombre", "Tipo", "Capacidad", "Precio/hora", "Superficie"};
         tableModel = new DefaultTableModel(columns, 0) {
@@ -103,30 +113,39 @@ public class ConsultarEspaciosFrame extends JFrame {
         String horaInicioStr = txtHoraInicio.getText().trim();
         String horaFinStr    = txtHoraFin.getText().trim();
 
-        if (fechaStr.isEmpty() || horaInicioStr.isEmpty() || horaFinStr.isEmpty()) {
-            JOptionPane.showMessageDialog(this, "Fecha y horario son obligatorios.",
-                    "Error de validación", JOptionPane.ERROR_MESSAGE);
-            return;
-        }
+        boolean tieneFiltroHorario = !fechaStr.isEmpty() || !horaInicioStr.isEmpty() || !horaFinStr.isEmpty();
 
-        String error = Validador.primerError(
-            Validador.fecha(fechaStr),
-            Validador.hora("Hora inicio", horaInicioStr),
-            Validador.hora("Hora fin", horaFinStr),
-            Validador.horasOrdenadas(horaInicioStr, horaFinStr)
-        );
-        if (error != null) {
-            JOptionPane.showMessageDialog(this, error, "Error de validación", JOptionPane.ERROR_MESSAGE);
-            return;
+        if (tieneFiltroHorario) {
+            if (fechaStr.isEmpty() || horaInicioStr.isEmpty() || horaFinStr.isEmpty()) {
+                JOptionPane.showMessageDialog(this, "Si ingresa fecha u horario, los tres campos son obligatorios.",
+                        "Error de validación", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+            String error = Validador.primerError(
+                Validador.fecha(fechaStr),
+                Validador.hora("Hora inicio", horaInicioStr),
+                Validador.hora("Hora fin", horaFinStr),
+                Validador.horasOrdenadas(horaInicioStr, horaFinStr)
+            );
+            if (error != null) {
+                JOptionPane.showMessageDialog(this, error, "Error de validación", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
         }
 
         try {
             String codigoComplejo = complejos.get(cmbComplejo.getSelectedIndex()).getCodigo();
-            Date fecha       = new SimpleDateFormat("yyyy-MM-dd").parse(fechaStr);
-            Time horaInicio  = Time.valueOf(horaInicioStr + ":00");
-            Time horaFin     = Time.valueOf(horaFinStr + ":00");
-            String seleccion = (String) cmbTipoEspacio.getSelectedItem();
-            TipoEspacio tipo = "TODOS".equals(seleccion) ? null : TipoEspacio.valueOf(seleccion);
+            String seleccion      = (String) cmbTipoEspacio.getSelectedItem();
+            TipoEspacio tipo      = "TODOS".equals(seleccion) ? null : TipoEspacio.valueOf(seleccion);
+
+            Date fecha      = null;
+            Time horaInicio = null;
+            Time horaFin    = null;
+            if (tieneFiltroHorario) {
+                fecha      = new SimpleDateFormat("yyyy-MM-dd").parse(fechaStr);
+                horaInicio = Time.valueOf(horaInicioStr + ":00");
+                horaFin    = Time.valueOf(horaFinStr + ":00");
+            }
 
             List<EspacioDeportivo> espacios = ReservaController.getInstance()
                     .consultarEspaciosDisponibles(codigoComplejo, fecha, horaInicio, horaFin, tipo);

@@ -86,11 +86,15 @@ public class ReservaController {
         Reserva reserva = buscarPorCodigo(codigoReserva);
         if (reserva == null) throw new IllegalArgumentException("Reserva no encontrada: " + codigoReserva);
 
-        Cliente cliente = reserva.obtenerCliente();
         long horasAnticipacion = reserva.calcularHorasAnticipacion(fechaCancelacion);
-        double importeSena = reserva.obtenerImporteSena();
+        if (horasAnticipacion < 24) {
+            throw new IllegalStateException(
+                "No se puede cancelar: faltan menos de 24 horas para la reserva (" + horasAnticipacion + "h de anticipación).");
+        }
 
-        if (horasAnticipacion > 24) {
+        Cliente cliente = reserva.obtenerCliente();
+        double importeSena = reserva.obtenerImporteSena();
+        if (importeSena > 0) {
             cliente.agregarCredito(importeSena);
         }
 
@@ -134,7 +138,8 @@ public class ReservaController {
         List<EspacioDeportivo> resultado = new ArrayList<>();
         for (EspacioDeportivo espacio : complejo.obtenerEspacios()) {
             boolean coincideTipo = tipoActividad == null || espacio.coincideTipoActividad(tipoActividad);
-            if (coincideTipo && espacio.estaDisponible(fecha, horaInicio, horaFin)) {
+            boolean disponible   = fecha == null || espacio.estaDisponible(fecha, horaInicio, horaFin);
+            if (coincideTipo && disponible) {
                 resultado.add(espacio);
             }
         }
@@ -144,11 +149,16 @@ public class ReservaController {
     public double totalRecaudadoPorComplejo(String codigoComplejo, Date desde, Date hasta) {
         double total = 0.0;
         for (Reserva reserva : reservas.values()) {
-            if (reserva.getEstado() == EstadoReserva.FINALIZADA
-                    && reserva.getComplejo().getCodigo().equals(codigoComplejo)
-                    && !reserva.getFecha().before(desde)
-                    && !reserva.getFecha().after(hasta)) {
+            EstadoReserva estado = reserva.getEstado();
+            if (estado == EstadoReserva.CANCELADA || estado == EstadoReserva.INGRESADA) continue;
+            if (!reserva.getComplejo().getCodigo().equals(codigoComplejo)) continue;
+            if (desde != null && reserva.getFecha().before(desde)) continue;
+            if (hasta != null && reserva.getFecha().after(hasta)) continue;
+
+            if (estado == EstadoReserva.FINALIZADA) {
                 total += reserva.calcularTotal();
+            } else {
+                total += reserva.obtenerImporteSena();
             }
         }
         return total;
