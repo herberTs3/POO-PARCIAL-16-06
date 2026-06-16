@@ -133,10 +133,9 @@ public class ReservaController {
 
         List<EspacioDeportivo> resultado = new ArrayList<>();
         for (EspacioDeportivo espacio : complejo.obtenerEspacios()) {
-            if (espacio.coincideTipoActividad(tipoActividad)) {
-                if (espacio.estaDisponible(fecha, horaInicio, horaFin)) {
-                    resultado.add(espacio);
-                }
+            boolean coincideTipo = tipoActividad == null || espacio.coincideTipoActividad(tipoActividad);
+            if (coincideTipo && espacio.estaDisponible(fecha, horaInicio, horaFin)) {
+                resultado.add(espacio);
             }
         }
         return resultado;
@@ -168,6 +167,23 @@ public class ReservaController {
 
     public List<Reserva> listarTodas() {
         return new ArrayList<>(reservas.values());
+    }
+
+    public List<Reserva> listarPorEstado(EstadoReserva estado) {
+        List<Reserva> resultado = new ArrayList<>();
+        for (Reserva r : reservas.values()) {
+            if (r.getEstado() == estado) resultado.add(r);
+        }
+        return resultado;
+    }
+
+    public void iniciarUso(String codigoReserva, String usuario) {
+        Reserva reserva = buscarPorCodigo(codigoReserva);
+        if (reserva == null) throw new IllegalArgumentException("Reserva no encontrada: " + codigoReserva);
+        reserva.cambiarEstado(EstadoReserva.EN_CURSO, usuario);
+        HistorialController.getInstance().registrarCambio(
+            "CONFIRMADA", "EN_CURSO", "Reserva", codigoReserva, usuario
+        );
     }
 
     private Reserva buscarPorCodigo(String codigo) {
