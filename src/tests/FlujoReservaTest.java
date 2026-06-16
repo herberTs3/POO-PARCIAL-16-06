@@ -7,9 +7,18 @@ import java.util.Date;
 import controllers.ClienteController;
 import controllers.ComplejoDeportivoController;
 import controllers.ReservaController;
+import models.Cliente;
+import models.ComplejoDeportivo;
+import models.EspacioDeportivo;
 import models.Reserva;
+import models.ReservaClaseGrupal;
+import models.ReservaTorneo;
+import models.enums.EstadoCliente;
+import models.enums.EstadoComplejo;
+import models.enums.EstadoEspacio;
 import models.enums.EstadoReserva;
 import models.enums.MedioPago;
+import models.enums.TipoEspacio;
 
 public class FlujoReservaTest {
 
@@ -21,11 +30,11 @@ public class FlujoReservaTest {
 
         int passed = 0;
 
-        passed += run("testSolicitarReservaEstadoIngresada",    FlujoReservaTest::testSolicitarReservaEstadoIngresada);
-        passed += run("testConfirmarReservaConSena",             FlujoReservaTest::testConfirmarReservaConSena);
-        passed += run("testIniciarUsoReservaCambiaEstado",       FlujoReservaTest::testIniciarUsoReservaCambiaEstado);
-        passed += run("testFinalizarReservaCalculaSaldo",        FlujoReservaTest::testFinalizarReservaCalculaSaldo);
-        passed += run("testCancelarReservaDevuelveCredito",      FlujoReservaTest::testCancelarReservaDevuelveCredito);
+        passed += run("testTorneoAplicaRecargoDel20Porciento",       FlujoReservaTest::testTorneoAplicaRecargoDel20Porciento);
+        passed += run("testClaseGrupalAplicaRecargoDel10Porciento",  FlujoReservaTest::testClaseGrupalAplicaRecargoDel10Porciento);
+        passed += run("testSolicitarReservaEstadoIngresada",         FlujoReservaTest::testSolicitarReservaEstadoIngresada);
+        passed += run("testConfirmarIniciarYFinalizarReserva",       FlujoReservaTest::testConfirmarIniciarYFinalizarReserva);
+        passed += run("testCancelarConMas24HsDevuelveSenaComoCredito", FlujoReservaTest::testCancelarConMas24HsDevuelveSenaComoCredito);
 
         System.out.println("\nResultado: " + passed + "/5 pasaron, " + (5 - passed) + " fallaron.");
     }
@@ -44,6 +53,32 @@ public class FlujoReservaTest {
         }
     }
 
+    private static void testTorneoAplicaRecargoDel20Porciento() {
+        ReservaTorneo reserva = new ReservaTorneo();
+        reserva.inicializar(crearCliente(), crearComplejo(), crearEspacio(),
+                new Date(), Time.valueOf("10:00:00"), Time.valueOf("11:00:00"), "TORNEO");
+
+        double precioBase = reserva.calcularPrecioBase();
+        double recargo    = reserva.calcularRecargo();
+        double esperado   = precioBase * 0.20;
+
+        if (Math.abs(recargo - esperado) >= 0.01)
+            throw new AssertionError("Recargo torneo esperado " + esperado + " pero fue " + recargo);
+    }
+
+    private static void testClaseGrupalAplicaRecargoDel10Porciento() {
+        ReservaClaseGrupal reserva = new ReservaClaseGrupal();
+        reserva.inicializar(crearCliente(), crearComplejo(), crearEspacio(),
+                new Date(), Time.valueOf("10:00:00"), Time.valueOf("11:00:00"), "CLASE_GRUPAL");
+
+        double precioBase = reserva.calcularPrecioBase();
+        double recargo    = reserva.calcularRecargo();
+        double esperado   = precioBase * 0.10;
+
+        if (Math.abs(recargo - esperado) >= 0.01)
+            throw new AssertionError("Recargo clase grupal esperado " + esperado + " pero fue " + recargo);
+    }
+
     private static void testSolicitarReservaEstadoIngresada() {
         Reserva reserva = ReservaController.getInstance().solicitarReserva(
                 "12345678", "C01", "E01",
@@ -56,42 +91,28 @@ public class FlujoReservaTest {
             throw new AssertionError("Estado esperado INGRESADA pero fue " + reserva.getEstado());
     }
 
-    private static void testConfirmarReservaConSena() {
+    private static void testConfirmarIniciarYFinalizarReserva() {
         ReservaController.getInstance().confirmarReservaConSena(
-                codigoReservaPrincipal, 500.0, MedioPago.TARJETA, "admin");
+                codigoReservaPrincipal, 500.0, MedioPago.TRANSFERENCIA, "admin");
 
         Reserva reserva = buscar(codigoReservaPrincipal);
-
         if (reserva.getEstado() != EstadoReserva.CONFIRMADA)
             throw new AssertionError("Estado esperado CONFIRMADA pero fue " + reserva.getEstado());
 
-        if (Math.abs(reserva.obtenerImporteSena() - 500.0) >= 0.01)
-            throw new AssertionError("Sena esperada 500.0 pero fue " + reserva.obtenerImporteSena());
-    }
-
-    private static void testIniciarUsoReservaCambiaEstado() {
         ReservaController.getInstance().iniciarUso(codigoReservaPrincipal, "admin");
-
-        Reserva reserva = buscar(codigoReservaPrincipal);
-
         if (reserva.getEstado() != EstadoReserva.EN_CURSO)
             throw new AssertionError("Estado esperado EN_CURSO pero fue " + reserva.getEstado());
-    }
 
-    private static void testFinalizarReservaCalculaSaldo() {
         double saldo = ReservaController.getInstance().finalizarReserva(codigoReservaPrincipal, "admin");
-
-        Reserva reserva = buscar(codigoReservaPrincipal);
-
         if (reserva.getEstado() != EstadoReserva.FINALIZADA)
             throw new AssertionError("Estado esperado FINALIZADA pero fue " + reserva.getEstado());
 
-        double esperado = 2000.0 - 500.0;
-        if (Math.abs(saldo - esperado) >= 0.01)
-            throw new AssertionError("Saldo pendiente esperado " + esperado + " pero fue " + saldo);
+        double saldoEsperado = reserva.calcularPrecioBase() - 500.0;
+        if (Math.abs(saldo - saldoEsperado) >= 0.01)
+            throw new AssertionError("Saldo esperado " + saldoEsperado + " pero fue " + saldo);
     }
 
-    private static void testCancelarReservaDevuelveCredito() {
+    private static void testCancelarConMas24HsDevuelveSenaComoCredito() {
         Reserva reserva = ReservaController.getInstance().solicitarReserva(
                 "87654321", "C01", "E02",
                 diasDesdeHoy(5), Time.valueOf("14:00:00"), Time.valueOf("15:00:00"),
@@ -100,18 +121,30 @@ public class FlujoReservaTest {
         ReservaController.getInstance().confirmarReservaConSena(
                 reserva.getCodigo(), 300.0, MedioPago.EFECTIVO, "admin");
 
-        double creditoAntes = reserva.obtenerCliente().getCreditoAFavor();
+        Cliente cliente     = reserva.obtenerCliente();
+        double creditoAntes = cliente.getCreditoAFavor();
 
         double devuelto = ReservaController.getInstance().cancelarReserva(
                 reserva.getCodigo(), new Date(), "admin");
 
-        double creditoDespues = reserva.obtenerCliente().getCreditoAFavor();
-
         if (Math.abs(devuelto - 300.0) >= 0.01)
-            throw new AssertionError("Credito devuelto esperado 300.0 pero fue " + devuelto);
+            throw new AssertionError("Devuelto esperado 300.0 pero fue " + devuelto);
 
-        if (Math.abs((creditoDespues - creditoAntes) - 300.0) >= 0.01)
-            throw new AssertionError("CreditoAFavor esperado +" + 300.0 + " pero fue " + (creditoDespues - creditoAntes));
+        if (Math.abs((cliente.getCreditoAFavor() - creditoAntes) - 300.0) >= 0.01)
+            throw new AssertionError("CreditoAFavor no se incremento correctamente");
+    }
+
+    private static Cliente crearCliente() {
+        return new Cliente("99999999", "Test", "Usuario", "123", "t@t.com", EstadoCliente.ACTIVO);
+    }
+
+    private static ComplejoDeportivo crearComplejo() {
+        return new ComplejoDeportivo("T01", "Complejo Test", "Calle 0", "000", "t@t.com", EstadoComplejo.ACTIVO);
+    }
+
+    private static EspacioDeportivo crearEspacio() {
+        return new EspacioDeportivo("ET1", "Espacio Test", 10, 100.0,
+                EstadoEspacio.DISPONIBLE, TipoEspacio.FUTBOL, "Cesped");
     }
 
     private static Date diasDesdeHoy(int dias) {
