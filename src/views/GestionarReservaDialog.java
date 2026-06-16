@@ -36,8 +36,17 @@ public class GestionarReservaDialog extends JDialog {
     }
 
     private void initComponents() {
-        confirmadas = ReservaController.getInstance().listarPorEstado(EstadoReserva.CONFIRMADA);
-        enCurso     = ReservaController.getInstance().listarPorEstado(EstadoReserva.EN_CURSO);
+        java.util.Calendar hoy = java.util.Calendar.getInstance();
+        confirmadas = new java.util.ArrayList<>();
+        for (Reserva r : ReservaController.getInstance().listarPorEstado(EstadoReserva.CONFIRMADA)) {
+            java.util.Calendar cal = java.util.Calendar.getInstance();
+            cal.setTime(r.getFecha());
+            if (cal.get(java.util.Calendar.YEAR)         == hoy.get(java.util.Calendar.YEAR)
+             && cal.get(java.util.Calendar.DAY_OF_YEAR)  == hoy.get(java.util.Calendar.DAY_OF_YEAR)) {
+                confirmadas.add(r);
+            }
+        }
+        enCurso = ReservaController.getInstance().listarPorEstado(EstadoReserva.EN_CURSO);
 
         JPanel panel = new JPanel(new GridBagLayout());
         GridBagConstraints gbc = new GridBagConstraints();
